@@ -28,9 +28,12 @@ La historia que cuenta el lab:
 
 1. Instala Ubuntu Server 22.04 en **una** VM base. Clona el repo dentro y ejecuta:
    ```bash
-   ./lab.sh instalar
+   git clone https://github.com/juanortizpa/demostracion-narino.git
+   cd demostracion-narino
+   bash lab.sh instalar
    ```
    Esto instala Ryu, Open vSwitch, Scapy y todo lo demás. Tarda unos minutos.
+   (No hace falta `chmod`: `lab.sh` arregla los permisos solo.)
 2. Apaga la VM base y **clónala 5 veces** en VirtualBox (marca *"Generar nuevas MAC"*).
    Nómbralas: `ryu`, `ovs`, `h1`, `h2`, `h3`.
 3. En el **host Windows**, desde PowerShell:
@@ -47,14 +50,14 @@ Entrega a cada grupo el archivo **OVA exportado** (o el disco de las VMs) por US
 
 ## En clase (cada grupo)
 
-Enciende las 5 VMs. En **cada una**, dentro del repo:
+Enciende las 5 VMs. En **cada una**, dentro del repo, un único comando:
 
 ```bash
-./lab.sh
+bash lab.sh
 ```
 
 La primera vez pide el **rol** (1=ryu, 2=ovs, 3=h1, 4=h2, 5=h3). Asigna la IP sola y queda guardado.
-Las siguientes veces, `./lab.sh` abre directo el menú de ese rol.
+Las siguientes veces, `bash lab.sh` abre directo el menú de ese rol.
 
 ### Orden de arranque
 
@@ -66,10 +69,15 @@ Las siguientes veces, `./lab.sh` abre directo el menú de ese rol.
 
 1. En **h2** → opción **2** (abrir buzón, dejar abierto).
 2. En **h1** → opción **1**, escribe un mensaje → aparece en h2. *(comunicación normal)*
-3. En **h3 (atacante)** → opción **1** (envenenar ARP). Dejar corriendo.
-4. En **h3**, otra terminal → opción **2** (interceptar y **ver**). Repite el paso 2: el atacante ve el mensaje.
-5. En **h3** → opción **3** (interceptar y **alterar**): busca una palabra y reemplázala. Repite el paso 2: a h2 le llega el mensaje **modificado**.
-6. **La defensa:** en **ryu**, detén el controlador (Ctrl+C) y elige opción **2** (mitigación). Repite el ataque: Ryu **detecta y bloquea** al atacante.
+3. En **h3 (atacante)** → opción **1** (**atacar y ver**). El ARP spoofing se activa solo.
+   Repite el paso 2: el atacante **ve** el mensaje pasar. (Ctrl+C para volver al menú.)
+4. En **h3** → opción **2** (**atacar y alterar**): escribe la palabra a buscar y su reemplazo.
+   Repite el paso 2: a h2 le llega el mensaje **modificado**. (Ctrl+C vuelve al menú y restaura la red.)
+5. **La defensa:** en **ryu**, detén el controlador (Ctrl+C) y elige opción **2** (mitigación).
+   Repite el ataque desde h3: Ryu **detecta y bloquea** al atacante.
+
+> En h3 ya no necesitas abrir dos terminales: el ARP spoofing se enciende y se apaga solo
+> con cada opción. Para cortar el ataque manualmente, usa la opción **3**.
 
 ---
 

