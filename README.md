@@ -12,6 +12,22 @@ controlada por **Ryu** y conmutada por **Open vSwitch (OVS)**, usando **Scapy** 
 
 ---
 
+## 🚀 Inicio rápido (versión simplificada para talleres)
+
+¿Solo quieres montar el lab y empezar? No sigas los pasos manuales de más abajo.
+Usa el orquestador **`lab.sh`** y la guía corta:
+
+1. En una VM base Ubuntu 22.04, una sola vez: `./lab.sh instalar`
+2. Apaga, clona la base 5 veces (ryu, ovs, h1, h2, h3).
+3. En el host Windows: `host-windows\crear-vms.ps1` (configura las redes internas solo).
+4. En cada VM: `./lab.sh` y elige su rol. Listo.
+
+👉 **Guía paso a paso:** [`GUIA_RAPIDA.md`](GUIA_RAPIDA.md)
+
+El resto de este README documenta el procedimiento manual detallado y la teoría de cada fase.
+
+---
+
 ## Plan del proyecto (4 fases)
 
 | Fase | Objetivo | Estado |

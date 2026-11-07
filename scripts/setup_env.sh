@@ -64,11 +64,14 @@ install_ovs() {
 }
 
 install_host() {
-    echo "==> [host] Instalando Scapy y utilidades de captura"
+    echo "==> [host] Instalando Scapy, utilidades de captura y dependencias del atacante"
     base_tools
-    apt-get install -y tshark
+    apt-get install -y tshark curl netcat-openbsd
+    # Dependencias para la interceptacion/modificacion de paquetes (VM atacante h3).
+    # Se instalan en todos los hosts para que la VM base clonada sirva como h1, h2 o h3.
+    apt-get install -y build-essential python3-dev libnetfilter-queue-dev libnfnetlink-dev
     pip3 install --upgrade pip
-    pip3 install "scapy>=2.5.0"
+    pip3 install "scapy>=2.5.0" "netfilterqueue>=1.0.0" requests
 }
 
 case "${ROLE}" in
