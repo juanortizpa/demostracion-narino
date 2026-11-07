@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Guía paso a paso — Laboratorio MITM en SDN</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root{
+    --blue:#2563eb; --blue-d:#1e3a8a; --ink:#0f172a; --slate:#475569; --line:#e2e8f0;
+    --green:#16a34a; --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2;
+    --amber:#d97706; --amber-bg:#fef3c7; --bg:#f8fafc; --card:#ffffff;
+  }
+  html,body{margin:0;padding:0;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);font-size:11.3px;line-height:1.5;}
+  h1,h2,h3{line-height:1.2;margin:0;}
+  code{font-family:"Consolas","SFMono-Regular",Menlo,monospace;background:#eef2ff;color:#3730a3;padding:1px 5px;border-radius:4px;font-size:0.92em;}
+  .page{page-break-after:always;}
+  .page:last-child{page-break-after:auto;}
+
+  /* ---------- PORTADA ---------- */
+  .cover{height:255mm;display:flex;flex-direction:column;justify-content:center;
+    background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;border-radius:14px;padding:26mm 20mm;}
+  .cover .kicker{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:#93c5fd;font-weight:700;}
+  .cover h1{font-size:40px;font-weight:800;margin:14px 0 8px;}
+  .cover .sub{font-size:17px;color:#dbeafe;max-width:80%;}
+  .cover .meta{margin-top:30px;font-size:12.5px;color:#bfdbfe;border-top:1px solid rgba(255,255,255,.25);padding-top:14px;}
+  .cover .pills{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;}
+  .cover .pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:600;}
+
+  /* ---------- SECCIONES ---------- */
+  .band{display:flex;align-items:center;gap:12px;margin:0 0 14px;}
+  .band .n{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--blue);color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;}
+  .band h2{font-size:20px;color:var(--blue-d);font-weight:800;}
+  .band .tag{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#fff;background:var(--slate);padding:4px 9px;border-radius:6px;}
+  .lead{color:var(--slate);margin:0 0 14px;font-size:12px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:0 0 12px;}
+  .fig{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:14px;margin:0 0 14px;text-align:center;}
+  .fig .cap{font-size:10.3px;color:var(--slate);margin-top:8px;font-style:italic;}
+
+  /* pasos numerados */
+  .steps{counter-reset:step;}
+  .step{display:flex;gap:13px;margin:0 0 11px;align-items:flex-start;}
+  .step .bullet{counter-increment:step;flex:0 0 auto;width:27px;height:27px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .step .bullet::before{content:counter(step);}
+  .step .body{flex:1;}
+  .step .body b{color:var(--ink);}
+  .step .body .hint{color:var(--slate);font-size:10.6px;}
+
+  pre{background:#0f172a;color:#e2e8f0;border-radius:9px;padding:11px 13px;font-family:"Consolas",monospace;font-size:10.6px;line-height:1.55;overflow:hidden;margin:7px 0;white-space:pre-wrap;}
+  pre .cmt{color:#64748b;}
+  pre .ok{color:#86efac;}
+
+  table{width:100%;border-collapse:collapse;font-size:10.8px;margin:4px 0;}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;}
+  th{background:#eff6ff;color:var(--blue-d);font-weight:700;}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  .note{border-left:4px solid var(--blue);background:#eff6ff;padding:9px 13px;border-radius:0 8px 8px 0;margin:10px 0;font-size:10.8px;}
+  .warn{border-left:4px solid var(--amber);background:var(--amber-bg);padding:9px 13px;border-radius:0 8px 8px 0;margin:10px 0;font-size:10.8px;}
+  .ok-box{border-left:4px solid var(--green);background:var(--green-bg);padding:9px 13px;border-radius:0 8px 8px 0;margin:10px 0;font-size:10.8px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .chk{list-style:none;padding:0;margin:0;}
+  .chk li{padding:5px 0 5px 26px;position:relative;border-bottom:1px dashed var(--line);font-size:11px;}
+  .chk li::before{content:"";position:absolute;left:0;top:6px;width:15px;height:15px;border:2px solid var(--green);border-radius:4px;}
+  .foot{font-size:9.5px;color:#94a3b8;text-align:center;margin-top:10px;}
+  .rolechip{display:inline-block;font-weight:700;padding:1px 7px;border-radius:5px;font-size:10px;}
+  .r-ryu{background:#ede9fe;color:#6d28d9;} .r-ovs{background:#cffafe;color:#0e7490;}
+  .r-h1{background:#dcfce7;color:#15803d;} .r-h2{background:#dcfce7;color:#15803d;} .r-h3{background:#fee2e2;color:#b91c1c;}
+</style>
+</head>
+<body>
+
+<!-- ===================== PORTADA ===================== -->
+<section class="page">
+  <div class="cover">
+    <div class="kicker">Taller de Ciberseguridad</div>
+    <h1>Laboratorio Man-in-the-Middle en Redes SDN</h1>
+    <div class="sub">Guía paso a paso ilustrada: cómo montar y presentar el laboratorio de interceptación y defensa de tráfico en una red definida por software.</div>
+    <div class="pills">
+      <div class="pill">5 máquinas virtuales</div>
+      <div class="pill">VirtualBox + Ubuntu 22.04</div>
+      <div class="pill">Un solo comando: bash lab.sh</div>
+      <div class="pill">Duración ≈ 2 horas</div>
+    </div>
+    <div class="meta">
+      Repositorio: github.com/juanortizpa/demostracion-narino &nbsp;•&nbsp; Charla para estudiantes de Nariño<br>
+      Uso exclusivamente educativo, en un entorno virtual y aislado.
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LA IDEA ===================== -->
+<section class="page">
+  <div class="band"><div class="n">i</div><h2>¿Qué vamos a mostrar?</h2><div class="tag">La idea</div></div>
+  <p class="lead">El laboratorio cuenta una historia en cuatro momentos. Primero una comunicación normal; luego cómo un atacante se mete en medio para <b>ver</b> y <b>alterar</b> los mensajes; y por último, lo más importante, <b>cómo se detecta y se bloquea</b> ese ataque.</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 760 250" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">
+      <!-- 4 tarjetas -->
+      <g>
+        <rect x="8" y="30" width="170" height="150" rx="12" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+        <circle cx="93" cy="62" r="17" fill="#dcfce7"/><text x="93" y="68" font-size="18" text-anchor="middle">1</text>
+        <text x="93" y="105" font-size="13" font-weight="700" text-anchor="middle" fill="#15803d">Comunicación</text>
+        <text x="93" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#15803d">normal</text>
+        <text x="93" y="148" font-size="10.5" text-anchor="middle" fill="#475569">h1 le envía un</text>
+        <text x="93" y="162" font-size="10.5" text-anchor="middle" fill="#475569">mensaje a h2</text>
+      </g>
+      <g>
+        <rect x="196" y="30" width="170" height="150" rx="12" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+        <circle cx="281" cy="62" r="17" fill="#fef3c7"/><text x="281" y="68" font-size="18" text-anchor="middle">2</text>
+        <text x="281" y="105" font-size="13" font-weight="700" text-anchor="middle" fill="#b45309">El atacante</text>
+        <text x="281" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#b45309">lo VE</text>
+        <text x="281" y="148" font-size="10.5" text-anchor="middle" fill="#475569">se mete en medio</text>
+        <text x="281" y="162" font-size="10.5" text-anchor="middle" fill="#475569">y lee el mensaje</text>
+      </g>
+      <g>
+        <rect x="384" y="30" width="170" height="150" rx="12" fill="#ffffff" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="469" cy="62" r="17" fill="#fee2e2"/><text x="469" y="68" font-size="18" text-anchor="middle">3</text>
+        <text x="469" y="105" font-size="13" font-weight="700" text-anchor="middle" fill="#b91c1c">El atacante</text>
+        <text x="469" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#b91c1c">lo ALTERA</text>
+        <text x="469" y="148" font-size="10.5" text-anchor="middle" fill="#475569">cambia el mensaje</text>
+        <text x="469" y="162" font-size="10.5" text-anchor="middle" fill="#475569">antes de reenviarlo</text>
+      </g>
+      <g>
+        <rect x="572" y="30" width="180" height="150" rx="12" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
+        <circle cx="662" cy="62" r="17" fill="#dbeafe"/><text x="662" y="68" font-size="18" text-anchor="middle">4</text>
+        <text x="662" y="105" font-size="13" font-weight="700" text-anchor="middle" fill="#1e3a8a">La DEFENSA</text>
+        <text x="662" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#1e3a8a">lo bloquea</text>
+        <text x="662" y="148" font-size="10.5" text-anchor="middle" fill="#475569">el controlador detecta</text>
+        <text x="662" y="162" font-size="10.5" text-anchor="middle" fill="#475569">y corta al atacante</text>
+      </g>
+      <!-- flechas -->
+      <g fill="#94a3b8"><polygon points="178,105 196,105 189,98 196,105 189,112"/>
+        <polygon points="366,105 384,105 377,98 384,105 377,112"/>
+        <polygon points="554,105 572,105 565,98 572,105 565,112"/></g>
+    </svg>
+    <div class="cap">Figura 1 — La narrativa del laboratorio en cuatro momentos.</div>
+  </div>
+
+  <div class="ok-box"><b>El mensaje clave para los estudiantes:</b> la ciberseguridad no es solo teoría. El mismo conocimiento que permite entender un ataque es el que permite <b>defender</b> a las personas y organizaciones. El momento 4 es el trabajo real de un profesional en ciberseguridad.</div>
+
+  <h3 style="color:var(--blue-d);margin:14px 0 6px;font-size:14px;">Las 5 máquinas virtuales</h3>
+  <table>
+    <tr><th>VM</th><th>Rol</th><th>IP(s)</th><th>Qué hace</th></tr>
+    <tr><td><span class="rolechip r-ryu">ryu</span></td><td>Controlador SDN</td><td>192.168.100.10</td><td>El "cerebro" de la red. Decide y, en modo defensa, bloquea.</td></tr>
+    <tr><td><span class="rolechip r-ovs">ovs</span></td><td>Switch OpenFlow</td><td>192.168.100.20 / 10.0.0.1</td><td>El conmutador que mueve los paquetes.</td></tr>
+    <tr><td><span class="rolechip r-h1">h1</span></td><td>Víctima A</td><td>10.0.0.11</td><td>Envía el mensaje.</td></tr>
+    <tr><td><span class="rolechip r-h2">h2</span></td><td>Víctima B</td><td>10.0.0.12</td><td>Recibe el mensaje.</td></tr>
+    <tr><td><span class="rolechip r-h3">h3</span></td><td>Atacante</td><td>10.0.0.66</td><td>Se mete en medio: ve y altera.</td></tr>
+  </table>
+</section>
+
+<!-- ===================== TOPOLOGIA ===================== -->
+<section class="page">
+  <div class="band"><div class="n">i</div><h2>Cómo se conectan</h2><div class="tag">Topología</div></div>
+  <p class="lead">Todas las VMs se conectan a una misma <b>red interna</b> de VirtualBox llamada <code>intnet</code> (una red privada, sin salida a Internet). El controlador <code>ryu</code> gobierna al switch <code>ovs</code>, y por ese switch pasa el tráfico de los tres hosts.</p>
+
+  <div class="fig">
+    <svg viewBox="0 0 740 330" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">
+      <rect x="10" y="10" width="720" height="310" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="26" y="32" font-size="12" font-weight="700" fill="#64748b">Red interna de VirtualBox: "intnet"  (aislada, sin Internet)</text>
+
+      <!-- plano de control -->
+      <text x="26" y="62" font-size="11" font-weight="700" fill="#6d28d9">PLANO DE CONTROL · OpenFlow (192.168.100.0/24)</text>
+      <!-- ryu -->
+      <rect x="300" y="72" width="140" height="56" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="370" y="96" font-size="14" font-weight="800" text-anchor="middle" fill="#6d28d9">ryu</text>
+      <text x="370" y="114" font-size="10" text-anchor="middle" fill="#6d28d9">controlador · .10</text>
+
+      <!-- enlace control -->
+      <line x1="370" y1="128" x2="370" y2="162" stroke="#7c3aed" stroke-width="2"/>
+      <text x="470" y="150" font-size="9.5" text-anchor="middle" fill="#7c3aed">OpenFlow 1.3 (tcp 6653)</text>
+
+      <!-- ovs -->
+      <rect x="300" y="162" width="140" height="56" rx="10" fill="#cffafe" stroke="#0891b2" stroke-width="2.5"/>
+      <text x="370" y="186" font-size="14" font-weight="800" text-anchor="middle" fill="#0e7490">ovs (switch)</text>
+      <text x="370" y="204" font-size="10" text-anchor="middle" fill="#0e7490">.20 (control) · 10.0.0.1 (datos)</text>
+
+      <!-- plano de datos -->
+      <text x="26" y="250" font-size="11" font-weight="700" fill="#15803d">PLANO DE DATOS (10.0.0.0/24)</text>
+
+      <!-- hosts -->
+      <g>
+        <rect x="120" y="262" width="130" height="50" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="185" y="283" font-size="13" font-weight="800" text-anchor="middle" fill="#15803d">h1</text>
+        <text x="185" y="300" font-size="10" text-anchor="middle" fill="#15803d">víctima A · .11</text>
+      </g>
+      <g>
+        <rect x="305" y="262" width="130" height="50" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="370" y="283" font-size="13" font-weight="800" text-anchor="middle" fill="#15803d">h2</text>
+        <text x="370" y="300" font-size="10" text-anchor="middle" fill="#15803d">víctima B · .12</text>
+      </g>
+      <g>
+        <rect x="490" y="262" width="130" height="50" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2.5"/>
+        <text x="555" y="283" font-size="13" font-weight="800" text-anchor="middle" fill="#b91c1c">h3</text>
+        <text x="555" y="300" font-size="10" text-anchor="middle" fill="#b91c1c">atacante · .66</text>
+      </g>
+      <!-- enlaces datos -->
+      <g stroke="#16a34a" stroke-width="2">
+        <line x1="185" y1="262" x2="330" y2="218"/>
+        <line x1="370" y1="262" x2="370" y2="218"/>
+      </g>
+      <line x1="555" y1="262" x2="410" y2="218" stroke="#dc2626" stroke-width="2"/>
+    </svg>
+    <div class="cap">Figura 2 — Topología del laboratorio: un controlador, un switch y tres hosts sobre la red interna <code>intnet</code>.</div>
+  </div>
+
+  <div class="note"><b>¿Por qué SDN?</b> En una red definida por software (SDN) el "cerebro" (el controlador) está separado del switch. Eso nos permite, en la fase de defensa, programar al controlador para que <b>detecte el ataque y lo bloquee automáticamente</b> — justo lo que hace un equipo de seguridad moderno.</div>
+</section>
+
+<!-- ===================== REQUISITOS ===================== -->
+<section class="page">
+  <div class="band"><div class="n">0</div><h2>Lo que necesitas</h2><div class="tag">Requisitos</div></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="color:var(--blue-d);font-size:13.5px;margin-bottom:7px;">Equipos (hands-on en grupos)</h3>
+      <ul style="margin:0;padding-left:17px;">
+        <li>60 estudiantes → grupos de <b>3-4</b> → <b>15-20 portátiles</b>.</li>
+        <li>Cada portátil corre las <b>5 VMs</b> a la vez.</li>
+        <li><b>16 GB de RAM</b> recomendado, 4+ núcleos, ~40 GB libres.</li>
+        <li><b>Virtualización activada</b> en la BIOS/UEFI (VT-x / AMD-V).</li>
+        <li>+1 equipo para el instructor (proyección).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue-d);font-size:13.5px;margin-bottom:7px;">Software (todo libre)</h3>
+      <table style="font-size:10px;">
+        <tr><th>Programa</th><th>Versión</th></tr>
+        <tr><td>VirtualBox (host)</td><td>7.0.x / 7.1.x</td></tr>
+        <tr><td>Ubuntu Server (VMs)</td><td>22.04 LTS</td></tr>
+        <tr><td>Python (Ryu)</td><td>3.9</td></tr>
+        <tr><td>Ryu / eventlet</td><td>4.34 / 0.30.2</td></tr>
+        <tr><td>Open vSwitch</td><td>2.17.x</td></tr>
+        <tr><td>Scapy / netfilterqueue</td><td>≥2.5 / ≥1.0</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="warn"><b>GNS3 ya NO se usa.</b> La versión anterior dependía de GNS3 y daba problemas de conectividad. Ahora todo se resuelve con VirtualBox + los scripts del repositorio. No lo instales.</div>
+
+  <div class="ok-box"><b>Duración estimada ≈ 2 horas</b> (con las VMs ya preparadas y repartidas): 30 min de charla · 15 min de arranque · 40 min de ataque (ver + alterar) · 20 min de defensa · 15 min de preguntas.</div>
+</section>
+
+<!-- ===================== PARTE 1: PREPARACION ===================== -->
+<section class="page">
+  <div class="band"><div class="n">1</div><h2>Preparación (una sola vez)</h2><div class="tag">Instructor</div></div>
+  <p class="lead">Esto lo hace el instructor <b>antes</b> de la charla. La idea: instalar todo en <b>una</b> VM base, clonarla 5 veces y configurar las redes de forma automática.</p>
+
+  <div class="steps">
+    <div class="step"><div class="bullet"></div><div class="body">
+      <b>Crea la VM base.</b> Instala <b>Ubuntu Server 22.04</b> en una VM nueva (instalación mínima, marca OpenSSH).
+    </div></div>
+    <div class="step"><div class="bullet"></div><div class="body">
+      <b>Descarga el laboratorio e instala todo</b> dentro de la VM base. Un solo comando instala Ryu, Open vSwitch, Scapy y lo demás:
+      <pre>git clone https://github.com/juanortizpa/demostracion-narino.git
+cd demostracion-narino
+bash lab.sh instalar   <span class="cmt"># tarda unos minutos</span></pre>
+      <span class="hint">No hace falta dar permisos con <code>chmod</code>: el script lo hace solo.</span>
+    </div></div>
+    <div class="step"><div class="bullet"></div><div class="body">
+      <b>Apaga y clona la base 5 veces</b> en VirtualBox (clic derecho → Clonar). Marca <i>"Generar nuevas direcciones MAC"</i>. Nómbralas: <code>ryu</code>, <code>ovs</code>, <code>h1</code>, <code>h2</code>, <code>h3</code>.
+    </div></div>
+    <div class="step"><div class="bullet"></div><div class="body">
+      <b>Configura las redes automáticamente</b> desde Windows (PowerShell). Esto pone las 5 VMs en la red interna <code>intnet</code> y le da 2 adaptadores a <code>ovs</code>:
+      <pre>cd demostracion-narino\host-windows
+.\crear-vms.ps1</pre>
+      <span class="hint">Opcional: <code>.\crear-vms.ps1 -Base "nombre-de-tu-base"</code> clona también desde PowerShell.</span>
+    </div></div>
+  </div>
+
+  <div class="fig">
+    <svg viewBox="0 0 720 150" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">
+      <!-- base -->
+      <rect x="20" y="45" width="120" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+      <text x="80" y="72" font-size="13" font-weight="800" text-anchor="middle" fill="#1e3a8a">VM base</text>
+      <text x="80" y="90" font-size="9.5" text-anchor="middle" fill="#1e3a8a">todo instalado</text>
+      <!-- flecha clonar -->
+      <text x="200" y="68" font-size="10" text-anchor="middle" fill="#64748b">clonar ×5</text>
+      <polygon points="168,80 232,80 224,72 232,80 224,88" fill="#94a3b8"/>
+      <!-- 5 clones -->
+      <g font-size="11" font-weight="800" text-anchor="middle">
+        <rect x="255" y="12" width="95" height="34" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="302" y="34" fill="#6d28d9">ryu</text>
+        <rect x="255" y="55" width="95" height="34" rx="8" fill="#cffafe" stroke="#0891b2"/><text x="302" y="77" fill="#0e7490">ovs</text>
+        <rect x="255" y="98" width="95" height="34" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="302" y="120" fill="#15803d">h1</text>
+        <rect x="365" y="34" width="95" height="34" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="412" y="56" fill="#15803d">h2</text>
+        <rect x="365" y="77" width="95" height="34" rx="8" fill="#fee2e2" stroke="#dc2626"/><text x="412" y="99" fill="#b91c1c">h3</text>
+      </g>
+      <!-- flecha red -->
+      <text x="545" y="68" font-size="10" text-anchor="middle" fill="#64748b">crear-vms.ps1</text>
+      <polygon points="478,80 540,80 532,72 540,80 532,88" fill="#94a3b8"/>
+      <rect x="565" y="40" width="135" height="70" rx="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="632" y="70" font-size="12" font-weight="800" text-anchor="middle" fill="#475569">Red "intnet"</text>
+      <text x="632" y="88" font-size="9.5" text-anchor="middle" fill="#64748b">5 VMs conectadas</text>
+    </svg>
+    <div class="cap">Figura 3 — Instalar una vez → clonar 5 → conectar la red automáticamente.</div>
+  </div>
+
+  <div class="note"><b>Para no instalar en clase:</b> exporta la VM base (o las 5) a un archivo <b>OVA</b> (<i>Archivo → Exportar servicio virtualizado</i>) y repártelo por USB a cada grupo. Así solo tienen que importar y encender.</div>
+</section>
+
+<!-- ===================== PARTE 2: EN CLASE ===================== -->
+<section class="page">
+  <div class="band"><div class="n">2</div><h2>En clase: arrancar el lab</h2><div class="tag">Cada grupo</div></div>
+  <p class="lead">Cada grupo enciende las 5 VMs. En <b>cada VM</b> hay un único comando. La primera vez pide el rol, asigna la IP sola y la deja fija.</p>
+
+  <pre>cd demostracion-narino
+bash lab.sh            <span class="cmt"># elige: 1=ryu  2=ovs  3=h1  4=h2  5=h3</span></pre>
+
+  <div class="card">
+    <h3 style="color:var(--blue-d);font-size:13.5px;margin-bottom:8px;">Orden de arranque (importante)</h3>
+    <div class="steps">
+      <div class="step"><div class="bullet"></div><div class="body">En <span class="rolechip r-ryu">ryu</span> → opción <b>1</b> (controlador normal). Déjalo corriendo.</div></div>
+      <div class="step"><div class="bullet"></div><div class="body">En <span class="rolechip r-ovs">ovs</span> → opción <b>1</b> (conectar el switch al controlador).</div></div>
+      <div class="step"><div class="bullet"></div><div class="body">En <span class="rolechip r-h1">h1</span> <span class="rolechip r-h2">h2</span> <span class="rolechip r-h3">h3</span> → ya tienen IP; listos para la demo.</div></div>
+    </div>
+  </div>
+
+  <div class="ok-box"><b>Comprobación rápida:</b> desde <code>h1</code>, el menú tiene la opción de "generar tráfico de prueba". Si <code>h2</code> responde al ping, la red está lista.</div>
+
+  <div class="warn"><b>Si una VM pierde su IP:</b> ya no debería pasar (queda fija con netplan). Si ocurriera, corre <code>bash lab.sh ip</code>. Para un diagnóstico completo: <code>bash scripts/diagnose.sh</code>.</div>
+</section>
+
+<!-- ===================== PARTE 3: LA DEMO ===================== -->
+<section class="page">
+  <div class="band"><div class="n">3</div><h2>La demostración</h2><div class="tag">El momento bonito</div></div>
+  <p class="lead">Aquí se cuenta la historia en vivo. Antes del ataque, el mensaje viaja directo de h1 a h2. Con el ataque, pasa por el atacante, que lo ve y lo altera.</p>
+
+  <div class="grid2">
+    <div class="fig">
+      <svg viewBox="0 0 330 170" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">
+        <text x="165" y="20" font-size="12" font-weight="800" text-anchor="middle" fill="#15803d">ANTES — comunicación normal</text>
+        <rect x="20" y="70" width="90" height="46" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="65" y="98" font-size="13" font-weight="800" text-anchor="middle" fill="#15803d">h1</text>
+        <rect x="220" y="70" width="90" height="46" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="265" y="98" font-size="13" font-weight="800" text-anchor="middle" fill="#15803d">h2</text>
+        <line x1="110" y1="93" x2="214" y2="93" stroke="#16a34a" stroke-width="3"/>
+        <polygon points="214,93 204,87 204,99" fill="#16a34a"/>
+        <text x="162" y="84" font-size="10" text-anchor="middle" fill="#15803d">"Hola"</text>
+        <text x="162" y="135" font-size="9.5" text-anchor="middle" fill="#64748b">El mensaje llega intacto.</text>
+      </svg>
+      <div class="cap">Figura 4a — Sin ataque.</div>
+    </div>
+    <div class="fig">
+      <svg viewBox="0 0 330 170" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial">
+        <text x="165" y="20" font-size="12" font-weight="800" text-anchor="middle" fill="#b91c1c">CON ATAQUE — Man in the Middle</text>
+        <rect x="12" y="95" width="78" height="42" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="51" y="121" font-size="12" font-weight="800" text-anchor="middle" fill="#15803d">h1</text>
+        <rect x="240" y="95" width="78" height="42" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="279" y="121" font-size="12" font-weight="800" text-anchor="middle" fill="#15803d">h2</text>
+        <rect x="120" y="36" width="90" height="44" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="2.5"/>
+        <text x="165" y="56" font-size="12" font-weight="800" text-anchor="middle" fill="#b91c1c">h3</text>
+        <text x="165" y="71" font-size="9" text-anchor="middle" fill="#b91c1c">atacante</text>
+        <line x1="90" y1="112" x2="150" y2="80" stroke="#dc2626" stroke-width="2.5"/>
+        <polygon points="150,80 139,80 146,89" fill="#dc2626"/>
+        <line x1="180" y1="80" x2="244" y2="112" stroke="#dc2626" stroke-width="2.5"/>
+        <polygon points="244,112 233,105 234,116" fill="#dc2626"/>
+        <text x="165" y="150" font-size="9.5" text-anchor="middle" fill="#b91c1c">El mensaje pasa por el atacante.</text>
+      </svg>
+      <div class="cap">Figura 4b — El tráfico se desvía por h3.</div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--blue-d);font-size:14px;margin:6px 0 8px;">Secuencia en vivo</h3>
+  <div class="steps">
+    <div class="step"><div class="bullet"></div><div class="body"><b>Abre el buzón en <span class="rolechip r-h2">h2</span></b> → opción <b>2</b> (recibir mensajes). Déjalo abierto.</div></div>
+    <div class="step"><div class="bullet"></div><div class="body"><b>Envía desde <span class="rolechip r-h1">h1</span></b> → opción <b>1</b>, escribe un mensaje. Aparece en h2. <span class="hint">(comunicación normal)</span></div></div>
+    <div class="step"><div class="bullet"></div><div class="body"><b>Ataca y VE, desde <span class="rolechip r-h3">h3</span></b> → opción <b>1</b>. El ARP spoofing se activa solo. Repite el envío: el atacante <b>ve</b> el mensaje pasar.</div></div>
+    <div class="step"><div class="bullet"></div><div class="body"><b>Ataca y ALTERA, desde <span class="rolechip r-h3">h3</span></b> → opción <b>2</b>. Escribe la palabra a buscar y su reemplazo. Repite el envío: a h2 le llega el mensaje <b>modificado</b>.</div></div>
+    <div class="step"><div class="bullet"></div><div class="body"><b>¡La defensa! En <span class="rolechip r-ryu">ryu</span></b>: detén el controlador (Ctrl+C) y elige opción <b>2</b> (mitigación). Repite el ataque desde h3: Ryu <b>lo detecta y lo bloquea</b>.</div></div>
+  </div>
+
+  <div class="note"><b>En el atacante ya no hacen falta dos terminales:</b> el ARP spoofing se enciende y se apaga solo con cada opción. Para cortar el ataque a mano, usa la opción <b>3</b>. Al terminar, la red se restaura.</div>
+</section>
+
+<!-- ===================== PROBLEMAS + CHECKLIST ===================== -->
+<section class="page">
+  <div class="band"><div class="n">✓</div><h2>Problemas comunes y checklist</h2><div class="tag">Cierre</div></div>
+
+  <table>
+    <tr><th>Síntoma</th><th>Solución</th></tr>
+    <tr><td>Las VMs no se ven entre sí</td><td>Confirma que las 5 están en la red interna <code>intnet</code> (lo hace <code>crear-vms.ps1</code>). Prueba <code>ping 10.0.0.12</code> desde h1.</td></tr>
+    <tr><td><code>bad interpreter: ^M</code> al correr un script</td><td>Ya resuelto: el repo fuerza finales de línea LF. Si editaste el archivo en Windows, vuelve a clonarlo.</td></tr>
+    <tr><td>El switch no conecta con el controlador</td><td>Arranca primero <b>ryu</b> (opción 1), luego <b>ovs</b> (opción 1).</td></tr>
+    <tr><td>Perdí la IP al reiniciar</td><td>Corre <code>bash lab.sh ip</code>. (Normalmente queda fija sola.)</td></tr>
+    <tr><td>Diagnóstico general</td><td><code>bash scripts/diagnose.sh</code></td></tr>
+  </table>
+
+  <h3 style="color:var(--blue-d);font-size:14px;margin:16px 0 8px;">Checklist antes de la charla</h3>
+  <div class="grid2">
+    <ul class="chk">
+      <li>VM base creada con Ubuntu 22.04</li>
+      <li><code>bash lab.sh instalar</code> ejecutado sin errores</li>
+      <li>5 clones creados (ryu, ovs, h1, h2, h3)</li>
+      <li><code>crear-vms.ps1</code> ejecutado</li>
+    </ul>
+    <ul class="chk">
+      <li>Prueba completa: enviar → ver → alterar → bloquear</li>
+      <li>OVA exportado y copiado a los USB</li>
+      <li>Portátiles de los grupos con 16 GB y VT-x activado</li>
+      <li>Proyector probado con el equipo del instructor</li>
+    </ul>
+  </div>
+
+  <div class="ok-box" style="margin-top:16px;"><b>Recuerda el marco ético:</b> todo se hace en un entorno virtual y aislado, sin datos reales ni redes de terceros. El objetivo es <b>aprender a defender</b>.</div>
+
+  <div class="foot">Laboratorio MITM en SDN · github.com/juanortizpa/demostracion-narino · Uso educativo · Guía generada para la charla de estudiantes de Nariño</div>
+</section>
+
+</body>
+</html>
