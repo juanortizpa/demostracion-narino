@@ -16,16 +16,26 @@ controlada por **Ryu** y conmutada por **Open vSwitch (OVS)**, usando **Scapy** 
 
 Si solo cuentas con **una máquina Ubuntu con 8 GB de RAM y sin entorno gráfico**,
 no hace falta montar 5 VMs. Usa la **simulación en terminal**: muestra a los
-estudiantes el flujo completo del ataque MITM y de su mitigación, paso a paso,
-sin instalar nada (solo Python 3, que ya trae Ubuntu).
+estudiantes el flujo completo del ataque MITM y de su mitigación, paso a paso.
+
+**No instala nada, no usa `sudo` ni internet.** Solo necesita Python 3, que ya
+viene en Ubuntu. Copia y pega esto en la terminal:
 
 ```bash
-python3 simulacion/simular_mitm.py      # Enter avanza fase por fase
-# o:
-bash lab.sh simular                     # lo mismo, desde el orquestador
+git clone https://github.com/juanortizpa/demostracion-narino.git
+cd demostracion-narino
+python3 simulacion/simular_mitm.py
 ```
 
-> **Simulado, no emulado.** No levanta Mininet/OVS/Ryu/scapy ni usa `sudo`.
+Pulsa **Enter** para avanzar de fase en fase. Otras formas de correrla:
+
+```bash
+bash lab.sh simular                 # lo mismo, desde el orquestador
+python3 simulacion/simular_mitm.py --auto    # avanza solo (para proyectar)
+python3 simulacion/simular_mitm.py --fase 6  # saltar a una fase (1-6)
+```
+
+> **Simulado, no emulado.** No levanta Mininet/OVS/Ryu/scapy.
 > Reproduce con las mismas IPs y MACs del laboratorio real las cachés ARP, la
 > tabla de flujos del switch y la consola del controlador en cada fase
 > (línea base → ARP spoofing → interceptación → modificación → inyección de
