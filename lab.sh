@@ -315,6 +315,8 @@ accion_atacante() {
 main() {
     fix_perms
     case "${1:-menu}" in
+        simular|sim|demo) shift || true
+                          exec python3 "${ROOT_DIR}/simulacion/simular_mitm.py" "$@" ;;
         instalar|install) instalar_todo; exit 0 ;;
         limpiar|reset|clean) limpiar_vm; exit 0 ;;
         rol|role)         pedir_rol; exit 0 ;;

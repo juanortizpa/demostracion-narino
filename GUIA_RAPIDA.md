@@ -4,6 +4,24 @@
 
 ---
 
+## ⚡ ¿Solo tienes una máquina con 8 GB y terminal? Usa la simulación
+
+No necesitas las 5 VMs para **mostrar el ataque** a los estudiantes. En una sola
+máquina Ubuntu, en la terminal:
+
+```bash
+python3 simulacion/simular_mitm.py     # Enter avanza fase por fase
+bash lab.sh simular --auto             # o automático, para proyectar
+```
+
+Es una **simulación** (no emulación): no instala nada, no usa `sudo` y corre en
+segundos. Muestra las cachés ARP, la tabla de flujos y la consola del controlador
+en las 6 fases. Más detalles en [`simulacion/README.md`](simulacion/README.md).
+
+El resto de esta guía es para el laboratorio **real** con 5 VMs.
+
+---
+
 ## Resumen en 1 minuto
 
 El lab tiene **5 máquinas virtuales**:
