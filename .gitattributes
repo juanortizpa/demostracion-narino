@@ -4,3 +4,10 @@
 *.py   text eol=lf
 # El script de PowerShell corre en Windows.
 *.ps1  text eol=crlf
+
+# Binarios: nunca convertir finales de linea (evita corromperlos).
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.pcap  binary
+*.pcapng binary

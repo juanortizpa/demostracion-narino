@@ -42,9 +42,7 @@ if [[ -n "${RYU_PID}" ]]; then
     ok "ryu-manager corriendo (PID ${RYU_PID})"
 else
     fail "ryu-manager NO esta corriendo"
-    echo "     Arranca con:"
-    echo "       source ${VENV_PATH}/bin/activate"
-    echo "       REST=1 ./scripts/run_controller.sh"
+    echo "     Arranca con:  bash lab.sh   (rol ryu, opcion 1)"
 fi
 
 # Verifica que el puerto OpenFlow este abierto
@@ -59,7 +57,7 @@ if [[ -n "${RYU_PID}" ]]; then
     if ss -tlnp 2>/dev/null | grep -q ":8080"; then
         ok "API REST Ryu en :8080 activa"
     else
-        warn "API REST Ryu (:8080) no detectada — arranca con: REST=1 ./scripts/run_controller.sh"
+        warn "API REST Ryu (:8080) no detectada — arranca con: bash lab.sh (rol ryu, opcion 1)"
     fi
 fi
 

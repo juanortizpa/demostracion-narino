@@ -68,11 +68,28 @@ instalar_todo() {
     ok "Instalacion completa."
     echo ""
     echo "  Siguiente paso:"
-    echo "    1) sudo shutdown now   (apaga la VM)"
-    echo "    2) En VirtualBox: clic derecho -> Clonar -> 5 veces"
+    echo "    1) bash lab.sh limpiar  (IMPORTANTE si probaste un rol en la base)"
+    echo "    2) sudo shutdown now    (apaga la VM)"
+    echo "    3) En VirtualBox: clic derecho -> Clonar -> 5 veces"
     echo "       (nombres: ryu, ovs, h1, h2, h3; marca 'Generar nuevas MAC')"
-    echo "    3) En el host Windows ejecuta: host-windows/crear-vms.ps1"
-    echo "    4) En cada VM: ./lab.sh  y elige su rol"
+    echo "    4) En el host Windows ejecuta: host-windows/crear-vms.ps1"
+    echo "    5) En cada VM: bash lab.sh  y elige su rol"
+}
+
+# =====================================================================
+#  LIMPIEZA  (dejar la VM base lista para clonar, sin rol ni IP del lab)
+# =====================================================================
+limpiar_vm() {
+    say "Dejando esta VM lista para clonar (borro el rol y la IP del lab)."
+    rm -f "${STATE}"
+    sudo rm -f /etc/netplan/90-lab-mitm.yaml 2>/dev/null || true
+    sudo rm -f /etc/sysctl.d/99-lab-forward.conf 2>/dev/null || true
+    ok "Rol e IP del lab borrados."
+    echo ""
+    echo "  Ahora apaga y clona la base:"
+    echo "    1) sudo shutdown now"
+    echo "    2) En VirtualBox: clic derecho -> Clonar -> 5 veces (MACs nuevas)"
+    echo "    3) En el host Windows: host-windows/crear-vms.ps1"
 }
 
 # =====================================================================
@@ -299,6 +316,7 @@ main() {
     fix_perms
     case "${1:-menu}" in
         instalar|install) instalar_todo; exit 0 ;;
+        limpiar|reset|clean) limpiar_vm; exit 0 ;;
         rol|role)         pedir_rol; exit 0 ;;
         ip)               ROL="$(cat "${STATE}" 2>/dev/null || true)"
                           if [[ -z "${ROL}" ]]; then pedir_rol; else configurar_ip; fi

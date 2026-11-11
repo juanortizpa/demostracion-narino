@@ -17,19 +17,24 @@ controlada por **Ryu** y conmutada por **Open vSwitch (OVS)**, usando **Scapy** 
 ¿Solo quieres montar el lab y empezar? No sigas los pasos manuales de más abajo.
 Usa el orquestador **`lab.sh`** y la guía corta:
 
-1. En una VM base Ubuntu 22.04, una sola vez:
+1. En una VM base Ubuntu 22.04 (con internet por NAT), una sola vez:
    ```bash
    git clone https://github.com/juanortizpa/demostracion-narino.git
    cd demostracion-narino
-   bash lab.sh instalar
+   sudo bash lab.sh instalar
    ```
-2. Apaga, clona la base 5 veces (ryu, ovs, h1, h2, h3).
-3. En el host Windows: `host-windows\crear-vms.ps1` (configura las redes internas solo).
-4. En cada VM: `bash lab.sh` y elige su rol. Listo.
+   El instalador es robusto: fuerza IPv4 en apt, y si la red bloquea el PPA
+   deadsnakes (común en redes universitarias) **compila Python 3.9 desde
+   fuente** automáticamente. No requiere `chmod` manual.
+2. Deja la base lista para clonar: `bash lab.sh limpiar` (borra el rol y la IP
+   de prueba). Luego `sudo shutdown now`.
+3. Clona la base 5 veces (ryu, ovs, h1, h2, h3) con MACs nuevas.
+4. En el host Windows: `host-windows\crear-vms.ps1 -Base "ubuntu-base"`
+   (clona y cablea la topología en estrella con una red interna por enlace).
+5. En cada VM: `bash lab.sh` y elige su rol. Listo.
 
-No necesitas dar permisos de ejecución a mano: `lab.sh` se encarga.
-
-👉 **Guía paso a paso:** [`GUIA_RAPIDA.md`](GUIA_RAPIDA.md)
+👉 **Guía paso a paso completa (para principiantes):** [`GUIA_PASO_A_PASO.pdf`](GUIA_PASO_A_PASO.pdf)
+y la versión corta [`GUIA_RAPIDA.md`](GUIA_RAPIDA.md)
 
 El resto de este README documenta el procedimiento manual detallado y la teoría de cada fase.
 

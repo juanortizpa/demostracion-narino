@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+ryu-venv/
+
+# Capturas y evidencias generadas en runtime
+captures/
+*.pcap
+*.pcapng
+/tmp/
+
+# Estado local del laboratorio
+.lab_rol
+
+# Sistema
+.DS_Store
+Thumbs.db

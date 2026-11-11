@@ -5,7 +5,20 @@
 =====================================================================
 
  Elimina el paso manual mas doloroso: entrar VM por VM a VirtualBox y
- poner cada adaptador en "Red interna / intnet". Este script lo hace por ti.
+ cablear cada adaptador a la red interna correcta. Este script lo hace
+ por ti y deja la TOPOLOGIA EN ESTRELLA correcta:
+
+   - Plano de CONTROL (OpenFlow):  red interna 'lab-ctrl'
+        ryu.nic1  <-> ovs.nic1
+   - Plano de DATOS (un enlace dedicado por host, para que TODO el
+     trafico pase por OVS y Ryu lo pueda ver y mitigar):
+        ovs.nic2 <-> h1.nic1   (red interna 'lab-h1')
+        ovs.nic3 <-> h2.nic1   (red interna 'lab-h2')
+        ovs.nic4 <-> h3.nic1   (red interna 'lab-h3')
+
+ IMPORTANTE: NO se usa una sola red interna para todos. Si h1 y h2
+ estuvieran en el mismo segmento, se hablarian directo SIN pasar por
+ OVS, y la demostracion de mitigacion en Ryu no funcionaria.
 
  USO (PowerShell en el host Windows):
 
@@ -14,11 +27,10 @@
    .\crear-vms.ps1
 
    # Caso B: tienes una VM base ya instalada y quieres clonar las 5:
-   .\crear-vms.ps1 -Base "lab-base"
+   .\crear-vms.ps1 -Base "ubuntu-base"
 
- Resultado: las 5 VMs quedan en la red interna 'intnet'; 'ovs' con 2
- adaptadores y las demas con 1. Luego enciende las VMs y en cada una
- ejecuta:  ./lab.sh
+ Resultado: las 5 VMs quedan cableadas en estrella. Luego enciende las
+ VMs y en cada una ejecuta:  bash lab.sh   y elige su rol.
 
  Requisito: VirtualBox 7.x instalado (VBoxManage en el PATH o en la
  ruta estandar de instalacion).
@@ -26,9 +38,12 @@
 #>
 
 param(
-    [string]$Base = "",                 # nombre de la VM base para clonar (opcional)
-    [string]$IntNet = "intnet",         # nombre de la red interna (debe ser igual en todas)
-    [int]$MemMB = 1024,                 # RAM por VM (1 GB basta para Ubuntu Server minimal)
+    [string]$Base      = "",            # nombre de la VM base para clonar (opcional)
+    [string]$Ctrl      = "lab-ctrl",    # red interna del plano de control
+    [string]$NetH1     = "lab-h1",      # enlace dedicado ovs<->h1
+    [string]$NetH2     = "lab-h2",      # enlace dedicado ovs<->h2
+    [string]$NetH3     = "lab-h3",      # enlace dedicado ovs<->h3
+    [int]$MemMB        = 1024,          # RAM por VM (1 GB basta para Ubuntu Server)
     [switch]$NoApagar                   # no intentar apagar las VMs antes de reconfigurar
 )
 
@@ -45,13 +60,16 @@ function Get-VBoxManage {
 $VBM = Get-VBoxManage
 Write-Host "==> Usando VBoxManage: $VBM" -ForegroundColor Cyan
 
-# La VM 'ovs' lleva 2 adaptadores; las demas, 1.
+# --- Definicion de VMs y sus adaptadores -----------------------------
+# 'Nets' lista la red interna de cada adaptador en orden (nic1, nic2, ...).
+# La VM 'ovs' lleva 4 adaptadores (1 de control + 3 enlaces de datos);
+# las demas, 1.
 $VMs = @(
-    @{ Name = "ryu"; Nics = 1 },
-    @{ Name = "ovs"; Nics = 2 },
-    @{ Name = "h1";  Nics = 1 },
-    @{ Name = "h2";  Nics = 1 },
-    @{ Name = "h3";  Nics = 1 }
+    @{ Name = "ryu"; Nets = @($Ctrl) },
+    @{ Name = "ovs"; Nets = @($Ctrl, $NetH1, $NetH2, $NetH3) },
+    @{ Name = "h1";  Nets = @($NetH1) },
+    @{ Name = "h2";  Nets = @($NetH2) },
+    @{ Name = "h3";  Nets = @($NetH3) }
 )
 
 function VM-Existe($name) {
@@ -95,30 +113,36 @@ foreach ($vm in $VMs) {
         Start-Sleep -Seconds 2
     }
 
-    Write-Host "==> Configurando red de '$name' ($($vm.Nics) adaptador/es en '$IntNet')" -ForegroundColor Cyan
+    $desc = ($vm.Nets -join ", ")
+    Write-Host "==> Configurando red de '$name' ($($vm.Nets.Count) adaptador/es: $desc)" -ForegroundColor Cyan
     & $VBM modifyvm $name --memory $MemMB | Out-Null
 
-    # Adaptador 1 -> red interna
-    & $VBM modifyvm $name --nic1 intnet --intnet1 $IntNet --cableconnected1 on | Out-Null
-
-    if ($vm.Nics -ge 2) {
-        # Adaptador 2 -> misma red interna (solo 'ovs')
-        & $VBM modifyvm $name --nic2 intnet --intnet2 $IntNet --cableconnected2 on | Out-Null
-    } else {
-        # Asegurar que no queden adaptadores extra conectados
-        & $VBM modifyvm $name --nic2 none | Out-Null
+    # Cablea cada adaptador a su red interna correspondiente.
+    $i = 1
+    foreach ($net in $vm.Nets) {
+        & $VBM modifyvm $name "--nic$i" intnet "--intnet$i" $net "--cableconnected$i" on | Out-Null
+        Write-Host "    nic$i -> intnet '$net'" -ForegroundColor DarkGray
+        $i++
     }
-    # Apagar adaptadores 3/4 por limpieza
-    & $VBM modifyvm $name --nic3 none --nic4 none | Out-Null
+    # Apaga los adaptadores sobrantes (hasta el 4) por limpieza.
+    for (; $i -le 4; $i++) {
+        & $VBM modifyvm $name "--nic$i" none | Out-Null
+    }
 
     Write-Host "    [OK] $name listo." -ForegroundColor Green
 }
 
 Write-Host ""
 Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host " Listo. Las 5 VMs estan en la red interna '$IntNet'." -ForegroundColor Green
+Write-Host " Listo. Topologia en estrella cableada:" -ForegroundColor Green
+Write-Host "   Control: ryu <-> ovs           (red interna '$Ctrl')" -ForegroundColor Green
+Write-Host "   Datos:   ovs <-> h1            (red interna '$NetH1')" -ForegroundColor Green
+Write-Host "            ovs <-> h2            (red interna '$NetH2')" -ForegroundColor Green
+Write-Host "            ovs <-> h3            (red interna '$NetH3')" -ForegroundColor Green
+Write-Host ""
 Write-Host " Siguiente paso:" -ForegroundColor Cyan
 Write-Host "   1) Enciende las 5 VMs."
-Write-Host "   2) En cada una ejecuta:  ./lab.sh   y elige su rol."
+Write-Host "   2) En cada una ejecuta:  bash lab.sh   y elige su rol."
 Write-Host "      (ryu=1  ovs=2  h1=3  h2=4  h3=5)"
+Write-Host "   3) Orden de arranque: ryu (opcion 1) -> ovs (opcion 1) -> hosts."
 Write-Host "=====================================================================" -ForegroundColor Cyan
