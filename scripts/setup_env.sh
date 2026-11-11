@@ -95,9 +95,22 @@ base_tools() {
 }
 
 # -------------------------------------------------------------------------
+# Comprueba si el host del PPA deadsnakes es alcanzable. En muchas redes
+# (universitarias, con proxy) ppa.launchpadcontent.net esta bloqueado y la
+# conexion se rechaza (codigo 000). En ese caso compilamos Python 3.9.
+# -------------------------------------------------------------------------
+ppa_alcanzable() {
+    local code
+    code="$(curl -s --ipv4 --max-time 8 -o /dev/null -w '%{http_code}' \
+            "https://ppa.launchpadcontent.net" 2>/dev/null || echo 000)"
+    [[ "${code}" != "000" ]]
+}
+
+# -------------------------------------------------------------------------
 # Agrega el PPA deadsnakes (Python 3.9 para Ubuntu 22.04) a MANO.
 # Evita 'add-apt-repository' porque consulta la API de Launchpad y falla
 # con ConnectionRefused en muchas redes.
+# Devuelve 1 si el PPA no es alcanzable (y limpia el listfile heredado).
 # -------------------------------------------------------------------------
 agregar_ppa_deadsnakes() {
     local keyring=/etc/apt/keyrings/deadsnakes.gpg
@@ -105,6 +118,14 @@ agregar_ppa_deadsnakes() {
     local keyid=F23C5A6CF475977595C89F51BA6932366A755776
     local codename
     codename="$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME:-jammy}}")"
+
+    if ! ppa_alcanzable; then
+        echo "[!] ppa.launchpadcontent.net no es alcanzable en esta red."
+        # Quita el listfile si quedo de un intento previo, para que los
+        # proximos 'apt-get update' no fallen por esa fuente inalcanzable.
+        rm -f "${listfile}"
+        return 1
+    fi
 
     install -d -m 0755 /etc/apt/keyrings
 
@@ -143,18 +164,88 @@ agregar_ppa_deadsnakes() {
     apt_update
 }
 
+# -------------------------------------------------------------------------
+# Compila Python 3.9 desde el codigo fuente de python.org.
+# Fallback cuando el PPA deadsnakes esta bloqueado. Instala como 'altinstall'
+# en /usr/local/bin/python3.9 sin tocar el python3 del sistema.
+# -------------------------------------------------------------------------
+compilar_python39() {
+    local pyver="3.9.21"
+    local src="/usr/local/src/Python-${pyver}"
+    local tgz="/usr/local/src/Python-${pyver}.tgz"
+
+    if [[ -x /usr/local/bin/python3.9 ]]; then
+        echo "==> Python 3.9 ya compilado: $(/usr/local/bin/python3.9 --version)"
+        return 0
+    fi
+
+    echo "==> Instalando dependencias de compilacion de Python"
+    apt_install build-essential zlib1g-dev libssl-dev libffi-dev libsqlite3-dev \
+        libbz2-dev libreadline-dev libncurses-dev liblzma-dev tk-dev uuid-dev
+
+    echo "==> Descargando Python ${pyver} de python.org"
+    mkdir -p /usr/local/src
+    local n=0
+    until curl -fsSL --ipv4 -o "${tgz}" \
+            "https://www.python.org/ftp/python/${pyver}/Python-${pyver}.tgz" \
+            && [[ -s "${tgz}" ]]; do
+        n=$((n+1))
+        if (( n >= 3 )); then
+            echo "[X] No se pudo descargar Python ${pyver} de python.org." >&2
+            return 1
+        fi
+        echo "[!] Reintento ${n}/3 de la descarga en 5s..." >&2
+        sleep 5
+    done
+
+    echo "==> Descomprimiendo y compilando Python ${pyver} (varios minutos)..."
+    tar -xzf "${tgz}" -C /usr/local/src
+    if ! ( cd "${src}" \
+           && ./configure --prefix=/usr/local --with-ensurepip=install \
+           && make -j"$(nproc)" \
+           && make altinstall ); then
+        echo "[X] Fallo la compilacion de Python 3.9." >&2
+        return 1
+    fi
+    hash -r
+    echo "==> Python 3.9 compilado: $(/usr/local/bin/python3.9 --version)"
+}
+
+# -------------------------------------------------------------------------
+# Obtiene Python 3.9: primero intenta el PPA; si esta bloqueado, compila.
+# -------------------------------------------------------------------------
+instalar_python39() {
+    if command -v python3.9 >/dev/null 2>&1; then
+        echo "==> python3.9 ya disponible: $(command -v python3.9)"
+        return 0
+    fi
+    echo "==> Buscando Python 3.9 (necesario para Ryu 4.34)"
+    if agregar_ppa_deadsnakes && apt_install python3.9 python3.9-venv python3.9-dev; then
+        echo "==> python3.9 instalado desde el PPA deadsnakes."
+        return 0
+    fi
+    echo "==> PPA no disponible: se compila Python 3.9 desde fuente."
+    compilar_python39
+}
+
 install_controller() {
     echo "==> [controller] Instalando Ryu 4.34 con Python 3.9"
     echo "    (Ryu 4.34 NO funciona con Python 3.10, el default de Ubuntu 22.04)"
     base_tools
 
-    agregar_ppa_deadsnakes
-    apt_install python3.9 python3.9-venv python3.9-dev
+    instalar_python39
+
+    local PY39
+    PY39="$(command -v python3.9 || echo /usr/local/bin/python3.9)"
+    if [[ ! -x "${PY39}" ]]; then
+        echo "[X] No se encontro python3.9 tras la instalacion." >&2
+        return 1
+    fi
 
     local VENV_PATH="/root/ryu-venv"
     if [[ ! -x "${VENV_PATH}/bin/python" ]]; then
-        echo "==> Creando entorno virtual en ${VENV_PATH}"
-        python3.9 -m venv "${VENV_PATH}"
+        echo "==> Creando entorno virtual en ${VENV_PATH} (con ${PY39})"
+        "${PY39}" -m venv "${VENV_PATH}"
     else
         echo "==> Entorno virtual ya existe en ${VENV_PATH}, lo reuso"
     fi
