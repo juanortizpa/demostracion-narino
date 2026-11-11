@@ -12,6 +12,31 @@ controlada por **Ryu** y conmutada por **Open vSwitch (OVS)**, usando **Scapy** 
 
 ---
 
+## 💻 ¿Pocos recursos? Simulación en terminal (recomendado para talleres)
+
+Si solo cuentas con **una máquina Ubuntu con 8 GB de RAM y sin entorno gráfico**,
+no hace falta montar 5 VMs. Usa la **simulación en terminal**: muestra a los
+estudiantes el flujo completo del ataque MITM y de su mitigación, paso a paso,
+sin instalar nada (solo Python 3, que ya trae Ubuntu).
+
+```bash
+python3 simulacion/simular_mitm.py      # Enter avanza fase por fase
+# o:
+bash lab.sh simular                     # lo mismo, desde el orquestador
+```
+
+> **Simulado, no emulado.** No levanta Mininet/OVS/Ryu/scapy ni usa `sudo`.
+> Reproduce con las mismas IPs y MACs del laboratorio real las cachés ARP, la
+> tabla de flujos del switch y la consola del controlador en cada fase
+> (línea base → ARP spoofing → interceptación → modificación → inyección de
+> flujo → mitigación). Detalles y opciones en
+> [`simulacion/README.md`](simulacion/README.md).
+
+El resto de esta guía describe el laboratorio **real** con tráfico de verdad,
+para cuando dispongas de más memoria.
+
+---
+
 ## 🚀 Inicio rápido (versión simplificada para talleres)
 
 ¿Solo quieres montar el lab y empezar? No sigas los pasos manuales de más abajo.
@@ -374,6 +399,9 @@ Ajusta la IP según la VM. Para `ovs`, configura ambas interfaces (`enp0s3` y `e
 ├── README.md
 ├── LICENSE
 ├── requirements.txt
+├── simulacion/                    # Simulación en terminal (para máquinas con poca RAM)
+│   ├── simular_mitm.py            # Demo paso a paso del ataque + mitigación (sin VMs)
+│   └── README.md                  # Cómo usarla y opciones
 ├── controller/
 │   └── simple_switch_13.py        # Controlador Ryu — learning switch OpenFlow 1.3
 ├── mitigation/                    # Fase 4: módulo de mitigación activa
