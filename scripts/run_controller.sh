@@ -14,8 +14,19 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTROLLER="${ROOT_DIR}/controller/simple_switch_13.py"
 
+# Si ryu-manager no esta en el PATH, intenta activar el venv del instalador.
 if ! command -v ryu-manager >/dev/null 2>&1; then
-    echo "ryu-manager no encontrado. Ejecuta: sudo ./scripts/setup_env.sh controller" >&2
+    for V in /root/ryu-venv "${HOME}/ryu-venv" /opt/ryu-venv; do
+        if [[ -x "${V}/bin/ryu-manager" ]]; then
+            # shellcheck disable=SC1091
+            source "${V}/bin/activate"
+            break
+        fi
+    done
+fi
+
+if ! command -v ryu-manager >/dev/null 2>&1; then
+    echo "ryu-manager no encontrado. Ejecuta: sudo bash lab.sh instalar" >&2
     exit 1
 fi
 

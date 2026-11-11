@@ -20,15 +20,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE="${HOME}/.lab_rol"
 
-# Detecta donde quedo el venv de Ryu (el instalador lo pone en /root/ryu-venv
-# y crea un enlace a ~/ryu-venv; si por lo que sea no esta, buscamos ambos).
-if [[ -x "${HOME}/ryu-venv/bin/ryu-manager" ]]; then
-    VENV="${HOME}/ryu-venv"
-elif [[ -x "/root/ryu-venv/bin/ryu-manager" ]]; then
-    VENV="/root/ryu-venv"
-else
-    VENV="${HOME}/ryu-venv"   # fallback; el instalador lo creara aqui
-fi
+# El instalador deja el venv de Ryu en /root/ryu-venv. Esa carpeta es
+# propiedad de root y NO es accesible a un usuario normal, por eso el
+# controlador (opciones 1 y 2 del rol ryu) se arranca siempre con sudo.
+# Ryu escucha en 6653/8080 (puertos sin privilegios), pero necesita leer
+# el venv, que vive bajo /root.
+VENV="/root/ryu-venv"
 
 # ---- Esquema de direcciones (coincide con docs/TOPOLOGIAS.md) --------
 CTRL_NET="192.168.100"     # plano de control (OpenFlow)
@@ -170,21 +167,19 @@ accion_ryu() {
     read -rp "  Opcion: " o
     case "$o" in
         1) say "Arrancando Ryu (OpenFlow 1.3 + API REST). Ctrl+C para detener."
-           if [[ ! -x "${VENV}/bin/ryu-manager" ]]; then
+           if ! sudo test -x "${VENV}/bin/ryu-manager"; then
                err "No encuentro ryu-manager en ${VENV}. Ejecuta: sudo bash lab.sh instalar"
                return 0
            fi
-           if [[ "${VENV}" == "/root/"* && "${EUID}" -ne 0 ]]; then
-               # El venv esta bajo /root: necesita sudo y PATH con el venv.
-               sudo env REST=1 PATH="${VENV}/bin:${PATH}" \
-                   bash "${ROOT_DIR}/scripts/run_controller.sh"
-           else
-               # shellcheck disable=SC1091
-               source "${VENV}/bin/activate"
-               REST=1 bash "${ROOT_DIR}/scripts/run_controller.sh"
-           fi ;;
+           sudo env REST=1 PATH="${VENV}/bin:${PATH}" \
+               bash "${ROOT_DIR}/scripts/run_controller.sh" ;;
         2) say "Arrancando Ryu en modo MITIGACION (detecta y bloquea ARP Spoofing)."
-           bash "${ROOT_DIR}/mitigation/run_mitigation.sh" ;;
+           if ! sudo test -x "${VENV}/bin/ryu-manager"; then
+               err "No encuentro ryu-manager en ${VENV}. Ejecuta: sudo bash lab.sh instalar"
+               return 0
+           fi
+           sudo env PATH="${VENV}/bin:${PATH}" \
+               bash "${ROOT_DIR}/mitigation/run_mitigation.sh" ;;
         3) configurar_ip ;;
         0) exit 0 ;;
         *) warn "Opcion invalida." ;;

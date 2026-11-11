@@ -12,20 +12,21 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "${SCRIPT_DIR}")"
-VENV="${HOME}/ryu-venv"
 
-if [[ ! -d "${VENV}" ]]; then
-    echo "[!] Venv no encontrado en ${VENV}"
-    echo "    Crea el venv con: python3.9 -m venv ~/ryu-venv"
-    echo "    Luego instala: pip install eventlet==0.30.2 ryu==4.34 requests"
-    exit 1
+# Si ryu-manager ya esta en el PATH (lab.sh lo pasa con sudo + PATH del venv),
+# lo usamos directo. Si no, buscamos el venv en las rutas habituales.
+if ! command -v ryu-manager >/dev/null 2>&1; then
+    for V in /root/ryu-venv "${HOME}/ryu-venv" /opt/ryu-venv; do
+        if [[ -x "${V}/bin/ryu-manager" ]]; then
+            # shellcheck disable=SC1091
+            source "${V}/bin/activate"
+            break
+        fi
+    done
 fi
 
-source "${VENV}/bin/activate"
-
-# Verificar que ryu-manager existe
 if ! command -v ryu-manager >/dev/null 2>&1; then
-    echo "[!] ryu-manager no encontrado en el venv"
+    echo "[!] ryu-manager no encontrado. Ejecuta: sudo bash lab.sh instalar" >&2
     exit 1
 fi
 
