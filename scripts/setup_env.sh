@@ -109,20 +109,30 @@ agregar_ppa_deadsnakes() {
     install -d -m 0755 /etc/apt/keyrings
 
     if [[ ! -s "${keyring}" ]]; then
-        echo "==> Descargando llave GPG de deadsnakes (${keyid:0:16}...)"
+        echo "==> Descargando llave GPG de deadsnakes por HTTPS (${keyid:0:16}...)"
+        # Descargamos la llave armada por HTTPS con curl (evita dirmngr, que
+        # necesita /root/.gnupg y conexion de demonio, y suele fallar en VMs).
+        local tmp gnupg_home url
+        tmp="$(mktemp)"
+        gnupg_home="$(mktemp -d)"
+        chmod 700 "${gnupg_home}"
+        url="https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x${keyid}"
         local n=0
-        until gpg --no-default-keyring --keyring "${keyring}" \
-                  --keyserver hkps://keyserver.ubuntu.com \
-                  --recv-keys "${keyid}"; do
+        until curl -fsSL --ipv4 -o "${tmp}" "${url}" && [[ -s "${tmp}" ]]; do
             n=$((n+1))
             if (( n >= 3 )); then
                 echo "[X] No se pudo descargar la llave GPG de deadsnakes." >&2
+                rm -rf "${tmp}" "${gnupg_home}"
                 return 1
             fi
             echo "[!] Reintento ${n}/3 de la llave GPG en 5s..." >&2
             sleep 5
         done
+        # dearmor usa un homedir temporal propio para no tocar /root/.gnupg.
+        GNUPGHOME="${gnupg_home}" gpg --batch --dearmor < "${tmp}" > "${keyring}"
+        rm -rf "${tmp}" "${gnupg_home}"
         chmod 0644 "${keyring}"
+        echo "==> Llave GPG instalada en ${keyring}"
     fi
 
     local line="deb [signed-by=${keyring}] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu ${codename} main"
