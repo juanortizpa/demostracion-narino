@@ -244,6 +244,24 @@ section{padding-block:40px;}
   margin-bottom:20px;box-shadow:var(--shadow);font-size:.94rem;color:var(--ink-soft);
 }
 .retos-intro b{color:var(--ink);}
+
+.lockcard{
+  border:1px solid var(--line);border-radius:16px;background:var(--paper);box-shadow:var(--shadow);
+  padding:28px 22px;text-align:center;margin-bottom:22px;
+}
+.lockcard svg{width:38px;height:38px;margin:0 auto 10px;display:block;}
+.lockcard h3{font-size:1.1rem;}
+.lockcard p{color:var(--ink-soft);font-size:.92rem;max-width:44ch;margin:8px auto 16px;}
+.lock-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+input[type="password"]{
+  font-family:var(--mono);font-size:1.05rem;letter-spacing:.3em;text-align:center;
+  padding:9px 10px 9px 16px;border:1px solid var(--line-strong);border-radius:8px;
+  background:var(--paper-2);color:var(--ink);width:6.5em;
+}
+input[type="password"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
+.lock-feedback{margin-top:10px;font-size:.86rem;min-height:1.2em;}
+.lock-feedback.bad{color:var(--danger);}
+.lock-feedback.ok{color:var(--good);}
 .reto{
   border:1px solid var(--line);border-radius:16px;background:var(--paper);box-shadow:var(--shadow);
   margin-bottom:22px;overflow:hidden;
@@ -585,6 +603,22 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
       escribir tu respuesta para comprobar, no importa si usas mayúsculas/minúsculas ni los espacios.
     </div>
 
+    <div class="lockcard" id="retos-lock">
+      <svg viewBox="0 0 34 34" aria-hidden="true">
+        <rect x="9" y="15" width="16" height="12" rx="2.5" fill="none" stroke="var(--amber)" stroke-width="2"></rect>
+        <path d="M12 15 V11 a5 5 0 0 1 10 0 V15" fill="none" stroke="var(--amber)" stroke-width="2"></path>
+        <circle cx="17" cy="21" r="1.8" fill="var(--amber)"></circle>
+      </svg>
+      <h3>Sección bloqueada</h3>
+      <p>Tu profesor la desbloqueará cuando sea el momento de trabajar los retos.</p>
+      <div class="lock-row">
+        <input type="password" id="retos-pass" placeholder="•••" maxlength="12" inputmode="numeric" aria-label="Contraseña para desbloquear los retos">
+        <button class="btn primary" id="retos-unlock" type="button">Desbloquear</button>
+      </div>
+      <div class="lock-feedback" id="retos-lock-feedback"></div>
+    </div>
+
+    <div id="retos-content" hidden>
     <!-- RETO A — César -->
     <article class="reto">
       <div class="reto-top">
@@ -676,6 +710,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
         </div>
       </div>
     </article>
+    </div>
   </section>
 
   <!-- ===================== PRÁCTICA ===================== -->
@@ -841,6 +876,44 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
   if (vCheck){
     vCheck.addEventListener("click", function(){ checkAnswer(vAnswer, vFeedback, HASH_B); });
     vAnswer.addEventListener("keydown", function(e){ if (e.key === "Enter") vCheck.click(); });
+  }
+
+  /* ---------- candado de los retos ---------- */
+  var RETOS_PASS = "123";
+  var lockCard = document.getElementById("retos-lock");
+  var retosContent = document.getElementById("retos-content");
+  var retosPass = document.getElementById("retos-pass");
+  var retosUnlock = document.getElementById("retos-unlock");
+  var retosLockFeedback = document.getElementById("retos-lock-feedback");
+
+  function unlockRetos(persist){
+    if (lockCard) lockCard.hidden = true;
+    if (retosContent) retosContent.hidden = false;
+    if (persist){
+      try { localStorage.setItem("retos-unlocked", "1"); } catch (e) {}
+    }
+  }
+
+  (function initLock(){
+    var yaDesbloqueado = false;
+    try { yaDesbloqueado = localStorage.getItem("retos-unlocked") === "1"; } catch (e) {}
+    if (yaDesbloqueado) unlockRetos(false);
+  })();
+
+  function tryUnlock(){
+    var val = (retosPass.value || "").trim();
+    if (val === RETOS_PASS){
+      unlockRetos(true);
+    } else {
+      retosLockFeedback.className = "lock-feedback bad";
+      retosLockFeedback.textContent = "Contraseña incorrecta. Pregúntale a tu profesor.";
+      retosPass.value = "";
+      retosPass.focus();
+    }
+  }
+  if (retosUnlock){
+    retosUnlock.addEventListener("click", tryUnlock);
+    retosPass.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
   }
 
   /* ---------- copiar comando de la práctica ---------- */
