@@ -5,16 +5,17 @@
 <style>
 /* ============================================================
    PLAN DE DISEÑO
-   Capa: "expediente de amenazas" — cada ataque se presenta como
-   un caso de investigación (número de caso, campo "qué rompe",
-   diagrama de evidencia). Fondo tinta nocturna, ámbar de sello/
-   evidencia como acento de alerta, cian de defensa para la parte
-   de criptografía y los retos. Tipos: Space Grotesk para titulares
-   y sellos, Inter para cuerpo de texto, JetBrains Mono para datos,
-   claves y texto cifrado.
-   Layout: documento de una sola columna que se recorre en vivo
-   durante la charla, con pestañas de navegación tipo carpeta
-   fijas arriba y tarjetas de "expediente" de ancho completo.
+   Capa: "expediente de amenazas" — cada ataque es un caso de
+   investigación (número de caso, campo "qué rompe", diagrama de
+   evidencia). Fondo tinta nocturna, ámbar de sello/evidencia como
+   acento de alerta, cian de defensa para criptografía y retos.
+   Tipos: Space Grotesk (titulares/sellos), Inter (cuerpo),
+   JetBrains Mono (datos, claves, texto cifrado).
+   Layout: MAZO DE DIAPOSITIVAS — una pantalla fija dividida en
+   franjas (marca arriba, escenario central, barra de navegación
+   abajo); cada diapositiva ocupa el escenario completo y se
+   cambia con botones, teclado o deslizar, nunca con scroll de
+   página.
    ============================================================ */
 :root{
   --bg:#f3f1ec;
@@ -44,58 +45,34 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0f0f0d;
-    --paper:#181814;
-    --paper-2:#1f1f19;
-    --ink:#f1efe6;
-    --ink-soft:#bcb8a8;
-    --ink-faint:#7d7868;
-    --line:#333026;
-    --line-strong:#464132;
-    --amber:#e3a455;
-    --amber-ink:#f6cf9a;
-    --amber-bg:#3a2c16;
-    --cyan:#5fc9d1;
-    --cyan-ink:#aee7ea;
-    --cyan-bg:#163233;
-    --danger:#e08787;
-    --danger-bg:#3a2020;
-    --good:#7fd19b;
-    --good-bg:#1c3326;
+    --bg:#0f0f0d; --paper:#181814; --paper-2:#1f1f19;
+    --ink:#f1efe6; --ink-soft:#bcb8a8; --ink-faint:#7d7868;
+    --line:#333026; --line-strong:#464132;
+    --amber:#e3a455; --amber-ink:#f6cf9a; --amber-bg:#3a2c16;
+    --cyan:#5fc9d1; --cyan-ink:#aee7ea; --cyan-bg:#163233;
+    --danger:#e08787; --danger-bg:#3a2020;
+    --good:#7fd19b; --good-bg:#1c3326;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.5);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f0f0d;
-  --paper:#181814;
-  --paper-2:#1f1f19;
-  --ink:#f1efe6;
-  --ink-soft:#bcb8a8;
-  --ink-faint:#7d7868;
-  --line:#333026;
-  --line-strong:#464132;
-  --amber:#e3a455;
-  --amber-ink:#f6cf9a;
-  --amber-bg:#3a2c16;
-  --cyan:#5fc9d1;
-  --cyan-ink:#aee7ea;
-  --cyan-bg:#163233;
-  --danger:#e08787;
-  --danger-bg:#3a2020;
-  --good:#7fd19b;
-  --good-bg:#1c3326;
+  --bg:#0f0f0d; --paper:#181814; --paper-2:#1f1f19;
+  --ink:#f1efe6; --ink-soft:#bcb8a8; --ink-faint:#7d7868;
+  --line:#333026; --line-strong:#464132;
+  --amber:#e3a455; --amber-ink:#f6cf9a; --amber-bg:#3a2c16;
+  --cyan:#5fc9d1; --cyan-ink:#aee7ea; --cyan-bg:#163233;
+  --danger:#e08787; --danger-bg:#3a2020;
+  --good:#7fd19b; --good-bg:#1c3326;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.5);
   color-scheme:dark;
 }
 
 *{box-sizing:border-box;}
+html,body{height:100%;}
 body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:var(--sans);
-  line-height:1.55;
-  -webkit-font-smoothing:antialiased;
+  background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.5;
+  -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; overflow:hidden;
 }
 ::selection{background:color-mix(in srgb, var(--amber) 35%, transparent);}
 
@@ -103,155 +80,195 @@ body{
   padding-left:max(16px, env(safe-area-inset-left,0px));
   padding-right:max(16px, env(safe-area-inset-right,0px));
 }
-.wrap{max-width:860px;margin:0 auto;}
-
 h1,h2,h3{font-family:var(--head);letter-spacing:-.01em;text-wrap:balance;margin:0;}
 code,.mono{font-family:var(--mono);}
 a{color:var(--amber-ink);}
 
-/* ---------- barra superior fija (pestañas de carpeta) ---------- */
-body::before{
-  content:"";position:fixed;inset:0 0 auto;
-  height:env(safe-area-inset-top,0px);z-index:30;background:var(--paper);
-}
-.topbar{
-  position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
-  background:var(--paper);border-bottom:1px solid var(--line);
-}
+/* ---------- marca (arriba) ---------- */
+.topbar{flex:none;background:var(--paper);border-bottom:1px solid var(--line);}
 .topbar-in{
-  max-width:860px;margin:0 auto;display:flex;align-items:center;gap:14px;
-  padding-block:10px;overflow-x:auto;scrollbar-width:none;
+  max-width:900px;margin:0 auto;display:flex;align-items:center;gap:10px;padding-block:9px;
 }
-.topbar-in::-webkit-scrollbar{display:none;}
 .brand-mini{
-  font-family:var(--head);font-weight:700;font-size:.86rem;white-space:nowrap;
-  color:var(--ink);display:flex;align-items:center;gap:7px;flex:none;
+  font-family:var(--head);font-weight:700;font-size:.84rem;white-space:nowrap;color:var(--ink);
+  display:flex;align-items:center;gap:7px;
 }
 .brand-mini .sq{width:9px;height:9px;background:var(--amber);border-radius:2px;flex:none;}
-.navpills{display:flex;gap:6px;flex:none;}
-.navpill{
-  font-family:var(--mono);font-size:.72rem;white-space:nowrap;
-  color:var(--ink-soft);background:var(--paper-2);border:1px solid var(--line);
-  border-radius:8px;padding:6px 10px;cursor:pointer;
+.progresstrack{flex:1 1 auto;height:4px;background:var(--paper-2);border-radius:99px;overflow:hidden;min-width:40px;}
+.progressfill{height:100%;background:var(--amber);border-radius:99px;width:0%;}
+.slidekicker-top{
+  font-family:var(--mono);font-size:.7rem;color:var(--ink-faint);white-space:nowrap;flex:none;
 }
-.navpill:hover{border-color:var(--line-strong);color:var(--ink);}
+
+/* ---------- escenario de diapositivas ---------- */
+.deck{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;}
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  overflow-y:auto;
+}
+.slide-inner{width:100%;max-width:900px;margin:0 auto;padding-block:26px;}
+
+/* ---------- divisores de parte ---------- */
+.slide.divider{justify-content:center;align-items:center;text-align:center;}
+.divider .slide-inner{max-width:620px;padding-block:0;}
+.divider .bignum{
+  font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber-ink);background:var(--amber-bg);display:inline-block;padding:5px 12px;
+  border-radius:999px;
+}
+.divider h2{font-size:clamp(1.9rem,1.3rem + 2.6vw,2.7rem);margin-top:14px;}
+.divider p{color:var(--ink-soft);font-size:1.05rem;margin-top:12px;}
+.divider hr{border:none;border-top:2px solid var(--line-strong);width:64px;margin:20px auto 0;}
+.divider .playrule{
+  margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--paper);
+  box-shadow:var(--shadow);padding:14px 16px;text-align:left;font-size:.92rem;color:var(--ink-soft);
+}
+.divider .playrule b{color:var(--ink);}
 
 /* ---------- portada ---------- */
-.hero{padding-block:34px 24px;}
+.hero{text-align:left;}
 .eyebrow{
   font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
   color:var(--amber-ink);display:inline-flex;align-items:center;gap:8px;
 }
 .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--amber) 22%, transparent);}
-.hero h1{font-size:clamp(1.9rem,1.3rem + 2.6vw,3rem);font-weight:650;margin-top:8px;}
-.hero .lede{color:var(--ink-soft);font-size:1.05rem;max-width:58ch;margin-top:10px;}
+.hero h1{font-size:clamp(2rem,1.2rem + 3.6vw,3.4rem);font-weight:650;margin-top:10px;}
+.hero .lede{color:var(--ink-soft);font-size:1.1rem;max-width:58ch;margin-top:14px;}
+.hero .advance{
+  margin-top:26px;font-family:var(--mono);font-size:.82rem;color:var(--ink-faint);
+  display:flex;align-items:center;gap:7px;
+}
 
-.agenda{
-  margin-top:22px;border:1px solid var(--line);border-radius:14px;background:var(--paper);
-  box-shadow:var(--shadow);padding:14px 16px;
-}
-.agenda-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.agenda-h h2{font-size:.95rem;}
-.agenda-h .total{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);}
-.timeline{display:flex;flex-wrap:wrap;gap:7px;}
+/* ---------- agenda ---------- */
+.agenda-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+.agenda-title{font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem);margin-top:6px;}
+.timeline{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
 .tpill{
-  display:flex;align-items:baseline;gap:6px;background:var(--paper-2);border:1px solid var(--line);
-  border-radius:9px;padding:6px 10px;font-size:.78rem;color:var(--ink-soft);min-width:0;
+  display:flex;align-items:baseline;gap:7px;background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:9px 13px;font-size:.88rem;color:var(--ink-soft);box-shadow:var(--shadow);
 }
-.tpill b{font-family:var(--mono);color:var(--ink);font-weight:600;font-size:.76rem;}
-.agenda-split{
-  display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;
-}
-.agenda-chip{
-  flex:1 1 220px;border-radius:10px;padding:10px 12px;font-size:.84rem;
-}
+.tpill b{font-family:var(--mono);color:var(--ink);font-weight:700;font-size:.84rem;}
+.agenda-split{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;}
+.agenda-chip{flex:1 1 240px;border-radius:12px;padding:14px 16px;font-size:.92rem;}
 .agenda-chip.a{background:var(--amber-bg);color:var(--amber-ink);}
 .agenda-chip.b{background:var(--cyan-bg);color:var(--cyan-ink);}
-.agenda-chip b{display:block;font-family:var(--head);font-size:.92rem;margin-bottom:2px;}
+.agenda-chip b{display:block;font-family:var(--head);font-size:1rem;margin-bottom:3px;}
 
-/* ---------- secciones ---------- */
-section{padding-block:40px;}
-.section-head{margin-bottom:22px;}
-.kicker{
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink-faint);
-}
-.section-head h2{font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);margin-top:4px;}
-.section-head p{color:var(--ink-soft);max-width:62ch;margin-top:8px;font-size:.98rem;}
+/* ---------- encabezado de diapositiva normal ---------- */
+.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
 
 /* ---------- tarjetas de caso ---------- */
-.case{
-  border:1px solid var(--line);border-radius:16px;background:var(--paper);
-  box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;
-}
-.case-top{
-  display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);
-  flex-wrap:wrap;
-}
-.case-icon{flex:none;width:52px;height:52px;}
-.case-id{
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-faint);
-}
-.case-title{font-size:1.2rem;margin-top:3px;}
+.case-top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:6px;}
+.case-icon{flex:none;width:50px;height:50px;}
+.case-id{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-faint);}
+.case-title{font-size:clamp(1.2rem,1rem + 1vw,1.6rem);margin-top:3px;}
 .case-tag{
-  margin-left:auto;align-self:center;font-family:var(--mono);font-size:.7rem;
-  letter-spacing:.04em;padding:5px 10px;border-radius:999px;white-space:nowrap;
+  margin-left:auto;align-self:center;font-family:var(--mono);font-size:.7rem;letter-spacing:.04em;
+  padding:5px 10px;border-radius:999px;white-space:nowrap;background:var(--danger-bg);color:var(--danger);
 }
-.case-tag.danger{background:var(--danger-bg);color:var(--danger);}
-.case-body{padding:16px 18px 18px;display:grid;gap:16px;grid-template-columns:1fr;}
-@media (min-width:620px){.case-body{grid-template-columns:1.3fr 1fr;}}
+.case-body{margin-top:16px;display:grid;gap:16px;grid-template-columns:1fr;}
+@media (min-width:680px){.case-body{grid-template-columns:1.3fr 1fr;}}
 .case-body .min0{min-width:0;}
 .case-what p{color:var(--ink-soft);font-size:.96rem;}
 .case-what .quote{
   margin-top:10px;border-left:3px solid var(--line-strong);padding-left:12px;
   font-size:.9rem;color:var(--ink-faint);font-style:italic;
 }
+.case-aside{
+  border:1px solid var(--line);border-radius:12px;background:var(--paper);box-shadow:var(--shadow);
+  padding:14px 16px;
+}
 .case-aside h4{
-  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink-faint);margin-bottom:8px;
 }
-.case-aside ul{margin:0 0 14px;padding-left:18px;color:var(--ink-soft);font-size:.9rem;display:flex;flex-direction:column;gap:5px;}
-.case-aside ul.fix{color:var(--ink-soft);}
+.case-aside ul{margin:0 0 14px;padding-left:18px;color:var(--ink-soft);font-size:.88rem;display:flex;flex-direction:column;gap:5px;}
+.case-aside ul:last-child{margin-bottom:0;}
 .case-aside .fix-h{color:var(--good);}
 
 /* ---------- criptografía ---------- */
-.timeline-crypto{display:flex;flex-direction:column;gap:14px;margin-top:4px;}
-.tc-row{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:start;}
-@media (max-width:520px){.tc-row{grid-template-columns:1fr;gap:4px;}}
-.tc-when{font-family:var(--mono);font-size:.78rem;color:var(--cyan-ink);font-weight:600;padding-top:2px;}
-.tc-what b{display:block;font-family:var(--head);font-size:1rem;margin-bottom:3px;}
-.tc-what p{color:var(--ink-soft);font-size:.94rem;}
+.timeline-crypto{display:flex;flex-direction:column;gap:16px;margin-top:18px;}
+.tc-row{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:start;}
+@media (max-width:560px){.tc-row{grid-template-columns:1fr;gap:4px;}}
+.tc-when{font-family:var(--mono);font-size:.8rem;color:var(--cyan-ink);font-weight:600;padding-top:2px;}
+.tc-what b{display:block;font-family:var(--head);font-size:1.05rem;margin-bottom:3px;}
+.tc-what p{color:var(--ink-soft);font-size:.95rem;}
 
 .principle{
-  margin-top:20px;border:1px solid var(--line);border-radius:14px;background:var(--cyan-bg);
-  padding:16px 18px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:14px;background:var(--cyan-bg);padding:18px 20px;
+  display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;
 }
-.principle svg{flex:none;width:34px;height:34px;}
-.principle p{color:var(--cyan-ink);font-size:.95rem;margin:0;max-width:56ch;}
+.principle svg{flex:none;width:38px;height:38px;}
+.principle p{color:var(--cyan-ink);font-size:1rem;margin:0;max-width:56ch;}
 .principle b{font-family:var(--head);}
 
-.flow{
-  display:flex;align-items:center;gap:8px;margin-top:18px;flex-wrap:wrap;
-  font-family:var(--mono);font-size:.8rem;
-}
-.flow .box{border:1px solid var(--line-strong);border-radius:8px;padding:8px 11px;background:var(--paper-2);color:var(--ink);}
+.flow{display:flex;align-items:center;gap:8px;margin-top:22px;flex-wrap:wrap;font-family:var(--mono);font-size:.82rem;}
+.flow .box{border:1px solid var(--line-strong);border-radius:8px;padding:9px 12px;background:var(--paper-2);color:var(--ink);}
 .flow .op{color:var(--ink-faint);}
 
 /* ---------- retos ---------- */
-.retos-intro{
-  border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:14px 16px;
-  margin-bottom:20px;box-shadow:var(--shadow);font-size:.94rem;color:var(--ink-soft);
+.reto-top{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-top:6px;}
+.reto-id{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);}
+.reto-title{font-size:clamp(1.1rem,1rem + .6vw,1.4rem);margin-top:3px;}
+.reto-method{
+  margin-left:auto;align-self:center;font-family:var(--mono);font-size:.7rem;
+  background:var(--cyan-bg);color:var(--cyan-ink);padding:5px 10px;border-radius:999px;white-space:nowrap;
 }
-.retos-intro b{color:var(--ink);}
+.ciphertext{
+  margin-top:16px;font-family:var(--mono);font-size:clamp(1rem,.85rem + .6vw,1.35rem);letter-spacing:.04em;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:16px;
+  text-align:center;word-break:break-word;color:var(--ink);font-weight:600;
+}
+.hintbox{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.hint-line{display:flex;gap:9px;align-items:flex-start;font-size:.89rem;color:var(--ink-soft);}
+.hint-line .flag{flex:none;font-family:var(--mono);font-size:.66rem;color:var(--amber-ink);
+  background:var(--amber-bg);padding:2px 7px;border-radius:999px;margin-top:1px;}
 
-.lockcard{
-  border:1px solid var(--line);border-radius:16px;background:var(--paper);box-shadow:var(--shadow);
-  padding:28px 22px;text-align:center;margin-bottom:22px;
+.tool{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);padding:12px 14px;}
+.tool summary{
+  cursor:pointer;font-family:var(--head);font-size:.9rem;font-weight:600;color:var(--ink);
+  list-style:none;display:flex;align-items:center;gap:8px;
 }
-.lockcard svg{width:38px;height:38px;margin:0 auto 10px;display:block;}
-.lockcard h3{font-size:1.1rem;}
-.lockcard p{color:var(--ink-soft);font-size:.92rem;max-width:44ch;margin:8px auto 16px;}
+.tool summary::before{content:"▸";color:var(--ink-faint);font-size:.8rem;}
+.tool[open] summary::before{content:"▾";}
+.tool-body{padding-top:10px;}
+.tool-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
+.tool-row label{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft);white-space:nowrap;}
+input[type="range"]{flex:1 1 140px;min-width:100px;}
+input[type="text"]{
+  font-family:var(--mono);font-size:.88rem;padding:7px 9px;border:1px solid var(--line-strong);
+  border-radius:8px;background:var(--paper);color:var(--ink);min-width:0;flex:1 1 160px;
+}
+input[type="text"]:focus,input[type="range"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
+.shiftval{font-family:var(--mono);font-weight:700;color:var(--amber-ink);min-width:2.2em;text-align:right;}
+.live-out{
+  font-family:var(--mono);font-size:.94rem;background:var(--paper);border:1px solid var(--line);
+  border-radius:8px;padding:9px 11px;min-height:1.5em;color:var(--ink-soft);word-break:break-word;
+}
+
+.answer{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;}
+.answer-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.btn{
+  font-family:var(--sans);font-size:.88rem;font-weight:600;cursor:pointer;border-radius:10px;
+  padding:8px 15px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);flex:none;
+}
+.btn:hover{border-color:var(--amber);}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:#fff;}
+:root[data-theme="dark"] .btn.primary,:root:not([data-theme="light"]) .btn.primary{color:#241a08;}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn.primary{color:#fff;}}
+.feedback{margin-top:9px;font-size:.88rem;border-radius:10px;padding:9px 11px;display:none;}
+.feedback.show{display:block;}
+.feedback.ok{background:var(--good-bg);color:var(--good);}
+.feedback.bad{background:var(--danger-bg);color:var(--danger);}
+.feedback.wait{background:var(--paper-2);color:var(--ink-faint);}
+
+/* ---------- candado ---------- */
+.slide.lockslide{justify-content:center;align-items:center;text-align:center;}
+.lockslide .slide-inner{max-width:420px;padding-block:0;}
+.lockcard svg{width:42px;height:42px;margin:0 auto 12px;display:block;}
+.lockcard h2{font-size:1.3rem;}
+.lockcard p{color:var(--ink-soft);font-size:.95rem;max-width:44ch;margin:10px auto 18px;}
 .lock-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
 input[type="password"]{
   font-family:var(--mono);font-size:1.05rem;letter-spacing:.3em;text-align:center;
@@ -259,89 +276,20 @@ input[type="password"]{
   background:var(--paper-2);color:var(--ink);width:6.5em;
 }
 input[type="password"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
-.lock-feedback{margin-top:10px;font-size:.86rem;min-height:1.2em;}
+.lock-feedback{margin-top:12px;font-size:.86rem;min-height:1.2em;}
 .lock-feedback.bad{color:var(--danger);}
 .lock-feedback.ok{color:var(--good);}
-.reto{
-  border:1px solid var(--line);border-radius:16px;background:var(--paper);box-shadow:var(--shadow);
-  margin-bottom:22px;overflow:hidden;
-}
-.reto-top{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;}
-.reto-id{font-family:var(--mono);font-size:.72rem;color:var(--ink-faint);}
-.reto-title{font-size:1.1rem;margin-top:3px;}
-.reto-method{
-  margin-left:auto;align-self:center;font-family:var(--mono);font-size:.7rem;
-  background:var(--cyan-bg);color:var(--cyan-ink);padding:5px 10px;border-radius:999px;white-space:nowrap;
-}
-.reto-body{padding:18px;}
-.ciphertext{
-  font-family:var(--mono);font-size:clamp(1rem,.85rem + .5vw,1.3rem);letter-spacing:.04em;
-  background:var(--paper-2);border:1px solid var(--line);border-radius:10px;
-  padding:16px;text-align:center;word-break:break-word;color:var(--ink);
-  font-weight:600;
-}
-.hintbox{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
-.hint-line{display:flex;gap:9px;align-items:flex-start;font-size:.9rem;color:var(--ink-soft);}
-.hint-line .flag{flex:none;font-family:var(--mono);font-size:.68rem;color:var(--amber-ink);
-  background:var(--amber-bg);padding:2px 7px;border-radius:999px;margin-top:1px;}
-.hint-btn{
-  align-self:flex-start;margin-top:4px;font-family:var(--sans);font-size:.82rem;font-weight:600;
-  color:var(--amber-ink);background:none;border:1px dashed var(--line-strong);border-radius:8px;
-  padding:7px 11px;cursor:pointer;
-}
-.hint-btn:hover{border-color:var(--amber);}
-
-.tool{
-  margin-top:16px;border:1px solid var(--line);border-radius:12px;background:var(--paper-2);padding:14px;
-}
-.tool summary{
-  cursor:pointer;font-family:var(--head);font-size:.92rem;font-weight:600;color:var(--ink);
-  list-style:none;display:flex;align-items:center;gap:8px;
-}
-.tool summary::before{content:"▸";color:var(--ink-faint);font-size:.8rem;}
-.tool[open] summary::before{content:"▾";}
-.tool-body{padding-top:12px;}
-.tool-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.tool-row label{font-family:var(--mono);font-size:.78rem;color:var(--ink-soft);white-space:nowrap;}
-input[type="range"]{flex:1 1 140px;min-width:100px;}
-input[type="text"]{
-  font-family:var(--mono);font-size:.9rem;padding:8px 10px;border:1px solid var(--line-strong);
-  border-radius:8px;background:var(--paper);color:var(--ink);min-width:0;flex:1 1 160px;
-}
-input[type="text"]:focus,input[type="range"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
-.shiftval{font-family:var(--mono);font-weight:700;color:var(--amber-ink);min-width:2.4em;text-align:right;}
-.live-out{
-  font-family:var(--mono);font-size:.98rem;background:var(--paper);border:1px solid var(--line);
-  border-radius:8px;padding:10px 12px;min-height:1.6em;color:var(--ink-soft);word-break:break-word;
-}
-
-.answer{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px;}
-.answer-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-.btn{
-  font-family:var(--sans);font-size:.9rem;font-weight:600;cursor:pointer;border-radius:10px;
-  padding:9px 16px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);
-  flex:none;
-}
-.btn:hover{border-color:var(--amber);}
-.btn.primary{background:var(--amber);border-color:var(--amber);color:#fff;}
-:root[data-theme="dark"] .btn.primary,:root:not([data-theme="light"]) .btn.primary{color:#241a08;}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn.primary{color:#fff;}}
-.feedback{margin-top:10px;font-size:.9rem;border-radius:10px;padding:10px 12px;display:none;}
-.feedback.show{display:block;}
-.feedback.ok{background:var(--good-bg);color:var(--good);}
-.feedback.bad{background:var(--danger-bg);color:var(--danger);}
-.feedback.wait{background:var(--paper-2);color:var(--ink-faint);}
 
 /* ---------- práctica ---------- */
 .practice{
-  border:1px solid var(--amber);border-radius:16px;background:var(--amber-bg);padding:22px;
-  box-shadow:var(--shadow);
+  border:1px solid var(--amber);border-radius:16px;background:var(--amber-bg);padding:24px;
+  box-shadow:var(--shadow);margin-top:18px;
 }
-.practice h2{color:var(--amber-ink);font-size:1.3rem;}
+.practice h2{color:var(--amber-ink);font-size:1.25rem;}
 .practice p{color:var(--amber-ink);font-size:.96rem;max-width:58ch;}
 .cmdbox{
-  margin-top:14px;display:flex;gap:8px;align-items:center;background:var(--ink);
-  border-radius:10px;padding:12px 14px;flex-wrap:wrap;
+  margin-top:14px;display:flex;gap:8px;align-items:center;background:var(--ink);border-radius:10px;
+  padding:12px 14px;flex-wrap:wrap;
 }
 .cmdbox code{color:#f1efe6;font-size:.88rem;flex:1 1 auto;min-width:0;overflow-x:auto;white-space:pre;}
 .copy-btn{
@@ -353,38 +301,61 @@ input[type="text"]:focus,input[type="range"]:focus{outline:2px solid var(--amber
 .practice-notes li{list-style:none;padding-left:18px;position:relative;}
 .practice-notes li::before{content:"✓";position:absolute;left:0;font-weight:700;}
 
-footer{padding-block:30px 46px;text-align:center;color:var(--ink-faint);font-size:.8rem;}
-footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;border-radius:5px;}
+/* ---------- barra de navegación (abajo) ---------- */
+.deckbar{flex:none;background:var(--paper);border-top:1px solid var(--line);}
+.deckbar-in{
+  max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;padding-block:10px;
+}
+.navbtn{
+  font-family:var(--sans);font-size:.86rem;font-weight:600;cursor:pointer;border-radius:10px;
+  padding:9px 14px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);
+  flex:none;display:flex;align-items:center;gap:6px;
+}
+.navbtn:hover:not(:disabled){border-color:var(--amber);}
+.navbtn:disabled{opacity:.35;cursor:not-allowed;}
+.dots{flex:1 1 auto;display:flex;justify-content:center;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.dots::-webkit-scrollbar{display:none;}
+.dot{
+  width:9px;height:9px;border-radius:50%;background:var(--line-strong);border:none;padding:0;
+  cursor:pointer;flex:none;
+}
+.dot.active{background:var(--amber);width:22px;border-radius:99px;}
+.dot.locked{background:var(--line);cursor:not-allowed;opacity:.5;}
+.counter{font-family:var(--mono);font-size:.76rem;color:var(--ink-faint);white-space:nowrap;flex:none;}
 
 @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+@media (max-width:480px){
+  .deckbar-in{gap:7px;}
+  .navbtn span.lbl{display:none;}
+}
 </style>
 
 <div class="topbar gutter">
   <div class="topbar-in">
     <span class="brand-mini"><span class="sq"></span>Expediente de Amenazas</span>
-    <div class="navpills">
-      <button class="navpill" data-go="casos" type="button">Casos</button>
-      <button class="navpill" data-go="cripto" type="button">Criptografía</button>
-      <button class="navpill" data-go="retos" type="button">Retos</button>
-      <button class="navpill" data-go="practica" type="button">Práctica</button>
-    </div>
+    <div class="progresstrack"><div class="progressfill" id="progressfill"></div></div>
+    <span class="slidekicker-top" id="topkicker"></span>
   </div>
 </div>
 
-<div class="wrap gutter">
+<div class="deck" id="deck">
 
-  <!-- ===================== PORTADA ===================== -->
-  <header class="hero">
-    <span class="eyebrow"><span class="dot"></span>Especialización en Ciberseguridad · Charla introductoria</span>
-    <h1>Cómo piensa un atacante</h1>
-    <p class="lede">Tres formas de atacar que seguro te vas a encontrar — explicadas sin tecnicismos —, un poco de
-      historia de la criptografía y dos mensajes cifrados para que los descifres con tu grupo.</p>
+  <!-- 0 · PORTADA -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter hero">
+      <span class="eyebrow"><span class="dot"></span>Especialización en Ciberseguridad · Charla introductoria</span>
+      <h1>Cómo piensa un atacante</h1>
+      <p class="lede">Tres formas de atacar que seguro te vas a encontrar — explicadas sin tecnicismos —, un poco
+        de historia de la criptografía y dos mensajes cifrados para que los descifres con tu grupo.</p>
+      <p class="advance">→ usa las flechas, haz clic o desliza para avanzar</p>
+    </div>
+  </section>
 
-    <div class="agenda">
-      <div class="agenda-h">
-        <h2>Agenda de hoy</h2>
-        <span class="total">2 horas en total</span>
-      </div>
+  <!-- 1 · AGENDA -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="agenda-kicker">Antes de empezar · 2 horas en total</span>
+      <h2 class="agenda-title">Agenda de hoy</h2>
       <div class="timeline">
         <span class="tpill"><b>5'</b>Bienvenida</span>
         <span class="tpill"><b>10'</b>Caso 1 · MITM</span>
@@ -395,22 +366,27 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
         <span class="tpill"><b>7'</b>Cierre</span>
       </div>
       <div class="agenda-split">
-        <div class="agenda-chip a"><b>Esta hora · Teoría</b>Todo lo que ves en este documento. Sin instalar nada.</div>
-        <div class="agenda-chip b"><b>La próxima hora · Práctica</b>Laboratorio en la terminal (ver el cierre, al final).</div>
+        <div class="agenda-chip a"><b>Esta hora · Teoría</b>Todo lo que viene en estas diapositivas. Sin instalar nada.</div>
+        <div class="agenda-chip b"><b>La próxima hora · Práctica</b>Laboratorio en la terminal (última diapositiva).</div>
       </div>
     </div>
-  </header>
+  </section>
 
-  <!-- ===================== LOS TRES CASOS ===================== -->
-  <section id="casos">
-    <div class="section-head">
-      <span class="kicker">Parte 1 · 26 minutos</span>
+  <!-- 2 · DIVISOR PARTE 1 -->
+  <section class="slide divider" data-slide>
+    <div class="slide-inner gutter">
+      <span class="bignum">Parte 1 · 26 minutos</span>
       <h2>Tres casos que debes reconocer</h2>
-      <p>No necesitas saber programar para identificarlos. Necesitas saber cómo se sienten cuando te están pasando.</p>
+      <p>No necesitas saber programar para identificarlos. Necesitas saber cómo se sienten cuando te están
+        pasando.</p>
+      <hr>
     </div>
+  </section>
 
-    <!-- CASO 1 — MITM -->
-    <article class="case">
+  <!-- 3 · CASO 1 — MITM -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Caso 001 · Parte 1</span>
       <div class="case-top">
         <svg class="case-icon" viewBox="0 0 52 52" aria-hidden="true">
           <rect x="3" y="20" width="14" height="12" rx="3" fill="none" stroke="var(--ink-soft)" stroke-width="2"></rect>
@@ -423,13 +399,13 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
           <div class="case-id">CASO-001 · ATAQUE AL CANAL</div>
           <h3 class="case-title">El impostor en medio de la conversación</h3>
         </div>
-        <span class="case-tag danger">Rompe: tu privacidad</span>
+        <span class="case-tag">Rompe: tu privacidad</span>
       </div>
       <div class="case-body">
         <div class="case-what min0">
-          <p>Dos personas creen que están hablando directamente — tú y tu banco, tú y una página web — pero alguien
-            se coló en medio y escucha todo. A veces no solo escucha: también cambia lo que cada uno dice antes de
-            que llegue al otro.</p>
+          <p>Dos personas creen que están hablando directamente — tú y tu banco, tú y una página web — pero
+            alguien se coló en medio y escucha todo. A veces no solo escucha: también cambia lo que cada uno dice
+            antes de que llegue al otro.</p>
           <div class="quote">Es como si alguien se metiera en medio de una llamada, escuchara cada palabra y,
             además, pudiera editar la frase antes de que llegue al otro lado — sin que ninguno de los dos note la
             diferencia en la voz.</div>
@@ -442,17 +418,20 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
             <li>Un mensaje te pide "confirmar datos" con mucha urgencia.</li>
           </ul>
           <h4 class="fix-h">Cómo te proteges</h4>
-          <ul class="fix">
+          <ul>
             <li>Evita trámites importantes en wifi público.</li>
             <li>Revisa el candado y la dirección exacta antes de escribir datos sensibles.</li>
             <li>Si algo exige prisa, detente y verifica por otro canal.</li>
           </ul>
         </div>
       </div>
-    </article>
+    </div>
+  </section>
 
-    <!-- CASO 2 — DoS -->
-    <article class="case">
+  <!-- 4 · CASO 2 — DoS -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Caso 002 · Parte 1</span>
       <div class="case-top">
         <svg class="case-icon" viewBox="0 0 52 52" aria-hidden="true">
           <circle cx="9" cy="16" r="3" fill="var(--danger)"></circle>
@@ -466,7 +445,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
           <div class="case-id">CASO-002 · ATAQUE AL ACCESO</div>
           <h3 class="case-title">La puerta bloqueada a propósito</h3>
         </div>
-        <span class="case-tag danger">Rompe: el acceso</span>
+        <span class="case-tag">Rompe: el acceso</span>
       </div>
       <div class="case-body">
         <div class="case-what min0">
@@ -483,7 +462,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
             <li>Suele coincidir con momentos clave (lanzamientos, eventos importantes).</li>
           </ul>
           <h4 class="fix-h">Cómo te proteges</h4>
-          <ul class="fix">
+          <ul>
             <li>Mantén tus dispositivos actualizados: uno infectado puede usarse para saturar a otros sin que lo
               sepas.</li>
             <li>Quien administra un servicio debe filtrar tráfico sospechoso antes de que llegue.</li>
@@ -491,10 +470,13 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
           </ul>
         </div>
       </div>
-    </article>
+    </div>
+  </section>
 
-    <!-- CASO 3 — Día cero -->
-    <article class="case">
+  <!-- 5 · CASO 3 — Día cero -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Caso 003 · Parte 1</span>
       <div class="case-top">
         <svg class="case-icon" viewBox="0 0 52 52" aria-hidden="true">
           <path d="M26 6 L42 13 V27 C42 37 35 43 26 46 C17 43 10 37 10 27 V13 Z"
@@ -506,7 +488,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
           <div class="case-id">CASO-003 · ATAQUE A LO DESCONOCIDO</div>
           <h3 class="case-title">La falla que nadie sabía que existía</h3>
         </div>
-        <span class="case-tag danger">Rompe: la confianza en el software</span>
+        <span class="case-tag">Rompe: la confianza en el software</span>
       </div>
       <div class="case-body">
         <div class="case-what min0">
@@ -524,7 +506,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
             <li>Primero se usan contra objetivos específicos, antes de hacerse públicos.</li>
           </ul>
           <h4 class="fix-h">Cómo te proteges</h4>
-          <ul class="fix">
+          <ul>
             <li>Instala las actualizaciones de seguridad lo antes posible: a veces cierran una puerta que ya
               estaba en uso.</li>
             <li>No puedes evitarlo solo, pero sí reducir el daño: copias de seguridad, contraseñas distintas por
@@ -533,83 +515,99 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
           </ul>
         </div>
       </div>
-    </article>
+    </div>
   </section>
 
-  <!-- ===================== CRIPTOGRAFÍA ===================== -->
-  <section id="cripto">
-    <div class="section-head">
-      <span class="kicker">Parte 2 · 7 minutos</span>
+  <!-- 6 · DIVISOR PARTE 2 -->
+  <section class="slide divider" data-slide>
+    <div class="slide-inner gutter">
+      <span class="bignum">Parte 2 · 7 minutos</span>
       <h2>Esconder un mensaje a simple vista</h2>
-      <p>La criptografía no guarda el mensaje en un lugar secreto: lo transforma en algo que parece basura, con una
-        regla y una llave que solo quien debe leerlo conoce.</p>
-    </div>
-
-    <div class="timeline-crypto">
-      <div class="tc-row">
-        <div class="tc-when">Hace +2000 años<br>Roma</div>
-        <div class="tc-what">
-          <b>El cifrado de César</b>
-          <p>Julio César movía cada letra de su mensaje un número fijo de posiciones en el alfabeto. Quien
-            interceptaba la carta veía solo letras sin sentido.</p>
-        </div>
-      </div>
-      <div class="tc-row">
-        <div class="tc-when">Siglo XX<br>Segunda Guerra</div>
-        <div class="tc-what">
-          <b>La máquina Enigma</b>
-          <p>Los alemanes usaron una máquina que cambiaba la regla de cifrado en cada letra. Un equipo de
-            matemáticos —entre ellos Alan Turing— logró romperlo, y acortó la guerra.</p>
-        </div>
-      </div>
-      <div class="tc-row">
-        <div class="tc-when">Hoy</div>
-        <div class="tc-what">
-          <b>El secreto ya no es el método</b>
-          <p>El método de cifrado es público; cualquiera puede estudiarlo. Lo único que se protege es la
-            <b>llave</b>: sin ella, conocer el método no sirve de nada.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="principle">
-      <svg viewBox="0 0 34 34" aria-hidden="true">
-        <rect x="8" y="15" width="18" height="13" rx="2.5" fill="none" stroke="var(--cyan)" stroke-width="2"></rect>
-        <path d="M12 15 V10 a5 5 0 0 1 10 0 V15" fill="none" stroke="var(--cyan)" stroke-width="2"></path>
-        <circle cx="17" cy="21" r="1.8" fill="var(--cyan)"></circle>
-      </svg>
-      <p><b>La regla de oro:</b> no cifres pensando en esconder cómo lo hiciste. Cifra pensando en proteger tu
-        llave — esa es la única parte que debe seguir siendo un secreto.</p>
-    </div>
-
-    <div class="flow" role="img" aria-label="Mensaje más llave, a través del método de cifrado, da el mensaje cifrado; el mismo proceso al revés lo recupera">
-      <span class="box">mensaje</span><span class="op">+</span><span class="box">llave</span>
-      <span class="op">→ método →</span><span class="box">mensaje cifrado</span>
-      <span class="op">··· → método inverso →</span><span class="box">mensaje original</span>
+      <p>La criptografía no guarda el mensaje en un lugar secreto: lo transforma en algo que parece basura, con
+        una regla y una llave que solo quien debe leerlo conoce.</p>
+      <hr>
     </div>
   </section>
 
-  <!-- ===================== RETOS ===================== -->
-  <section id="retos">
-    <div class="section-head">
-      <span class="kicker">Parte 3 · 15 minutos</span>
+  <!-- 7 · CRIPTO: HISTORIA -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Criptografía · Parte 2</span>
+      <h2 style="font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);margin-top:4px;">Una idea con 2000 años de historia</h2>
+      <div class="timeline-crypto">
+        <div class="tc-row">
+          <div class="tc-when">Hace +2000 años<br>Roma</div>
+          <div class="tc-what">
+            <b>El cifrado de César</b>
+            <p>Julio César movía cada letra de su mensaje un número fijo de posiciones en el alfabeto. Quien
+              interceptaba la carta veía solo letras sin sentido.</p>
+          </div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-when">Siglo XX<br>Segunda Guerra</div>
+          <div class="tc-what">
+            <b>La máquina Enigma</b>
+            <p>Los alemanes usaron una máquina que cambiaba la regla de cifrado en cada letra. Un equipo de
+              matemáticos —entre ellos Alan Turing— logró romperlo, y acortó la guerra.</p>
+          </div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-when">Hoy</div>
+          <div class="tc-what">
+            <b>El secreto ya no es el método</b>
+            <p>El método de cifrado es público; cualquiera puede estudiarlo. Lo único que se protege es la
+              <b>llave</b>: sin ella, conocer el método no sirve de nada.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · CRIPTO: PRINCIPIO -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Criptografía · Parte 2</span>
+      <h2 style="font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);margin-top:4px;margin-bottom:18px;">La regla de oro</h2>
+      <div class="principle">
+        <svg viewBox="0 0 34 34" aria-hidden="true">
+          <rect x="8" y="15" width="18" height="13" rx="2.5" fill="none" stroke="var(--cyan)" stroke-width="2"></rect>
+          <path d="M12 15 V10 a5 5 0 0 1 10 0 V15" fill="none" stroke="var(--cyan)" stroke-width="2"></path>
+          <circle cx="17" cy="21" r="1.8" fill="var(--cyan)"></circle>
+        </svg>
+        <p><b>No cifres pensando en esconder cómo lo hiciste.</b> Cifra pensando en proteger tu llave — esa es la
+          única parte que debe seguir siendo un secreto.</p>
+      </div>
+      <div class="flow" role="img" aria-label="Mensaje más llave, a través del método de cifrado, da el mensaje cifrado; el mismo proceso al revés lo recupera">
+        <span class="box">mensaje</span><span class="op">+</span><span class="box">llave</span>
+        <span class="op">→ método →</span><span class="box">mensaje cifrado</span>
+        <span class="op">··· → método inverso →</span><span class="box">mensaje original</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · DIVISOR PARTE 3 -->
+  <section class="slide divider" data-slide>
+    <div class="slide-inner gutter">
+      <span class="bignum">Parte 3 · 15 minutos</span>
       <h2>Reto: descifra el mensaje</h2>
-      <p>Trabaja en grupos de 2 o 3. Abajo hay dos mensajes cifrados con métodos distintos. Cuando creas tener la
+      <p>Trabaja en grupos de 2 o 3. Vas a ver dos mensajes cifrados con métodos distintos. Cuando creas tener la
         respuesta, escríbela para comprobarla: la página solo te dice si es correcta, no te la muestra.</p>
+      <div class="playrule">
+        <b>Cómo se juega:</b> en los dos retos el mensaje original está en español, en MAYÚSCULAS y sin tildes.
+        Al escribir tu respuesta para comprobar, no importa si usas mayúsculas/minúsculas ni los espacios.
+      </div>
     </div>
+  </section>
 
-    <div class="retos-intro">
-      <b>Cómo se juega:</b> en los dos retos el mensaje original está en español, en MAYÚSCULAS y sin tildes. Al
-      escribir tu respuesta para comprobar, no importa si usas mayúsculas/minúsculas ni los espacios.
-    </div>
-
-    <div class="lockcard" id="retos-lock">
+  <!-- 10 · CANDADO -->
+  <section class="slide lockslide" data-slide>
+    <div class="slide-inner gutter">
       <svg viewBox="0 0 34 34" aria-hidden="true">
         <rect x="9" y="15" width="16" height="12" rx="2.5" fill="none" stroke="var(--amber)" stroke-width="2"></rect>
         <path d="M12 15 V11 a5 5 0 0 1 10 0 V15" fill="none" stroke="var(--amber)" stroke-width="2"></path>
         <circle cx="17" cy="21" r="1.8" fill="var(--amber)"></circle>
       </svg>
-      <h3>Sección bloqueada</h3>
+      <h2>Sección bloqueada</h2>
       <p>Tu profesor la desbloqueará cuando sea el momento de trabajar los retos.</p>
       <div class="lock-row">
         <input type="password" id="retos-pass" placeholder="•••" maxlength="12" inputmode="numeric" aria-label="Contraseña para desbloquear los retos">
@@ -617,10 +615,11 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
       </div>
       <div class="lock-feedback" id="retos-lock-feedback"></div>
     </div>
+  </section>
 
-    <div id="retos-content" hidden>
-    <!-- RETO A — César -->
-    <article class="reto">
+  <!-- 11 · RETO A — César -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
       <div class="reto-top">
         <div class="min0">
           <div class="reto-id">CASO-A001</div>
@@ -628,45 +627,46 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
         </div>
         <span class="reto-method">Cifrado por desplazamiento</span>
       </div>
-      <div class="reto-body">
-        <div class="ciphertext">CLYPMPJH HUALZ KL JVUMPHY</div>
 
-        <div class="hintbox">
-          <div class="hint-line"><span class="flag">cómo funciona</span>
-            <span>Cada letra del mensaje original se corrió siempre el mismo número de posiciones hacia adelante
-              en el alfabeto. Por ejemplo, con un desplazamiento de 3: la A se convierte en D, la B en E... y
-              <span class="mono">HOLA</span> se convierte en <span class="mono">KROD</span>.</span>
-          </div>
-          <div class="hint-line"><span class="flag">pista</span>
-            <span>El alfabeto tiene 26 letras: como máximo hay 25 desplazamientos posibles. Prueba con la
-              herramienta de abajo.</span>
-          </div>
+      <div class="ciphertext">CLYPMPJH HUALZ KL JVUMPHY</div>
+
+      <div class="hintbox">
+        <div class="hint-line"><span class="flag">cómo funciona</span>
+          <span>Cada letra del mensaje original se corrió siempre el mismo número de posiciones hacia adelante
+            en el alfabeto. Por ejemplo, con un desplazamiento de 3: la A se convierte en D, la B en E... y
+            <span class="mono">HOLA</span> se convierte en <span class="mono">KROD</span>.</span>
         </div>
-
-        <details class="tool">
-          <summary>Herramienta: probar desplazamientos</summary>
-          <div class="tool-body">
-            <div class="tool-row">
-              <label for="r-shift">Desplazamiento a probar</label>
-              <input type="range" id="r-shift" min="0" max="25" value="0" step="1">
-              <span class="shiftval" id="r-shift-val">0</span>
-            </div>
-            <div class="live-out" id="r-shift-out" aria-live="polite"></div>
-          </div>
-        </details>
-
-        <div class="answer">
-          <div class="answer-row">
-            <input type="text" id="r-answer" placeholder="Escribe el mensaje descifrado completo" aria-label="Tu respuesta para el reto A">
-            <button class="btn primary" id="r-check" type="button">Comprobar respuesta</button>
-          </div>
-          <div class="feedback" id="r-feedback"></div>
+        <div class="hint-line"><span class="flag">pista</span>
+          <span>El alfabeto tiene 26 letras: como máximo hay 25 desplazamientos posibles. Prueba con la
+            herramienta de abajo.</span>
         </div>
       </div>
-    </article>
 
-    <!-- RETO B — Vigenère -->
-    <article class="reto">
+      <details class="tool">
+        <summary>Herramienta: probar desplazamientos</summary>
+        <div class="tool-body">
+          <div class="tool-row">
+            <label for="r-shift">Desplazamiento a probar</label>
+            <input type="range" id="r-shift" min="0" max="25" value="0" step="1">
+            <span class="shiftval" id="r-shift-val">0</span>
+          </div>
+          <div class="live-out" id="r-shift-out" aria-live="polite"></div>
+        </div>
+      </details>
+
+      <div class="answer">
+        <div class="answer-row">
+          <input type="text" id="r-answer" placeholder="Escribe el mensaje descifrado completo" aria-label="Tu respuesta para el reto A">
+          <button class="btn primary" id="r-check" type="button">Comprobar respuesta</button>
+        </div>
+        <div class="feedback" id="r-feedback"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · RETO B — Vigenère -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
       <div class="reto-top">
         <div class="min0">
           <div class="reto-id">CASO-B002</div>
@@ -674,87 +674,179 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
         </div>
         <span class="reto-method">Cifrado polialfabético</span>
       </div>
-      <div class="reto-body">
-        <div class="ciphertext">CE FCEYV IV CE XEMFR HHWIQJE</div>
 
-        <div class="hintbox">
-          <div class="hint-line"><span class="flag">cómo funciona</span>
-            <span>Esta vez no todas las letras se mueven lo mismo: el desplazamiento depende de una
-              <b>palabra clave</b> que se repite letra por letra debajo del mensaje. Por ejemplo, con la clave
-              <span class="mono">SOL</span>: <span class="mono">HOLA</span> se convierte en
-              <span class="mono">ZCWS</span> (H+S, O+O, L+L, A+S).</span>
-          </div>
-          <div class="hint-line"><span class="flag">pista</span>
-            <span>La clave real de este mensaje tiene solo 3 letras, y tiene que ver con lo que conecta a los
-              computadores entre sí.</span>
-          </div>
+      <div class="ciphertext">CE FCEYV IV CE XEMFR HHWIQJE</div>
+
+      <div class="hintbox">
+        <div class="hint-line"><span class="flag">cómo funciona</span>
+          <span>Esta vez no todas las letras se mueven lo mismo: el desplazamiento depende de una
+            <b>palabra clave</b> que se repite letra por letra debajo del mensaje. Por ejemplo, con la clave
+            <span class="mono">SOL</span>: <span class="mono">HOLA</span> se convierte en
+            <span class="mono">ZCWS</span> (H+S, O+O, L+L, A+S).</span>
         </div>
-
-        <details class="tool">
-          <summary>Herramienta: probar una clave</summary>
-          <div class="tool-body">
-            <div class="tool-row">
-              <label for="v-key">Tu clave candidata</label>
-              <input type="text" id="v-key" placeholder="por ejemplo: SOL" maxlength="12">
-            </div>
-            <div class="live-out" id="v-out" aria-live="polite"></div>
-          </div>
-        </details>
-
-        <div class="answer">
-          <div class="answer-row">
-            <input type="text" id="v-answer" placeholder="Escribe el mensaje descifrado completo" aria-label="Tu respuesta para el reto B">
-            <button class="btn primary" id="v-check" type="button">Comprobar respuesta</button>
-          </div>
-          <div class="feedback" id="v-feedback"></div>
+        <div class="hint-line"><span class="flag">pista</span>
+          <span>La clave real de este mensaje tiene solo 3 letras, y tiene que ver con lo que conecta a los
+            computadores entre sí.</span>
         </div>
       </div>
-    </article>
+
+      <details class="tool">
+        <summary>Herramienta: probar una clave</summary>
+        <div class="tool-body">
+          <div class="tool-row">
+            <label for="v-key">Tu clave candidata</label>
+            <input type="text" id="v-key" placeholder="por ejemplo: SOL" maxlength="12">
+          </div>
+          <div class="live-out" id="v-out" aria-live="polite"></div>
+        </div>
+      </details>
+
+      <div class="answer">
+        <div class="answer-row">
+          <input type="text" id="v-answer" placeholder="Escribe el mensaje descifrado completo" aria-label="Tu respuesta para el reto B">
+          <button class="btn primary" id="v-check" type="button">Comprobar respuesta</button>
+        </div>
+        <div class="feedback" id="v-feedback"></div>
+      </div>
     </div>
   </section>
 
-  <!-- ===================== PRÁCTICA ===================== -->
-  <section id="practica">
-    <div class="section-head">
-      <span class="kicker">Siguiente hora · fuera de este documento</span>
-      <h2>Ahora, a la terminal</h2>
-      <p>Lo que viene ya no está aquí: es una simulación que corre en tu propia terminal, sin instalar nada.</p>
-    </div>
+  <!-- 13 · CIERRE / PRÁCTICA -->
+  <section class="slide" data-slide>
+    <div class="slide-inner gutter">
+      <span class="kicker">Siguiente hora · fuera de estas diapositivas</span>
+      <h2 style="font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);margin-top:4px;">Ahora, a la terminal</h2>
+      <p style="color:var(--ink-soft);margin-top:8px;font-size:.98rem;">Lo que viene ya no está aquí: es una
+        simulación que corre en tu propia terminal, sin instalar nada.</p>
 
-    <div class="practice">
-      <h2>Simulación del ataque MITM en una red SDN</h2>
-      <p>Verás, paso a paso, el mismo Caso 001 (el impostor en medio) ocurriendo sobre una red simulada: cómo
-        engaña a las dos víctimas, cómo intercepta y altera el tráfico, y cómo un controlador de red lo detecta y
-        lo bloquea.</p>
-      <div class="cmdbox">
-        <code id="cmd-text">python3 simulacion/simular_mitm.py</code>
-        <button class="copy-btn" id="copy-cmd" type="button">Copiar</button>
+      <div class="practice">
+        <h2>Simulación del ataque MITM en una red SDN</h2>
+        <p>Verás, paso a paso, el mismo Caso 001 (el impostor en medio) ocurriendo sobre una red simulada: cómo
+          engaña a las dos víctimas, cómo intercepta y altera el tráfico, y cómo un controlador de red lo detecta
+          y lo bloquea.</p>
+        <div class="cmdbox">
+          <code id="cmd-text">python3 simulacion/simular_mitm.py</code>
+          <button class="copy-btn" id="copy-cmd" type="button">Copiar</button>
+        </div>
+        <ul class="practice-notes">
+          <li>No necesita instalar nada: solo Python 3, que ya viene en Ubuntu.</li>
+          <li>No usa <span class="mono">sudo</span> ni conexión a internet.</li>
+          <li>Pulsa Enter para avanzar de fase en fase, a tu ritmo.</li>
+        </ul>
       </div>
-      <ul class="practice-notes">
-        <li>No necesita instalar nada: solo Python 3, que ya viene en Ubuntu.</li>
-        <li>No usa <span class="mono">sudo</span> ni conexión a internet.</li>
-        <li>Pulsa Enter para avanzar de fase en fase, a tu ritmo.</li>
-      </ul>
     </div>
   </section>
 
-  <footer>
-    Charla educativa — Especialización en Ciberseguridad. Material del proyecto <code>demostracion-narino</code>.
-    Uso exclusivo con fines formativos.
-  </footer>
+</div>
+
+<div class="deckbar gutter">
+  <div class="deckbar-in">
+    <button class="navbtn" id="prevBtn" type="button">←<span class="lbl">&nbsp;Anterior</span></button>
+    <div class="dots" id="dots" role="tablist" aria-label="Diapositivas"></div>
+    <span class="counter" id="counter">1 / 14</span>
+    <button class="navbtn" id="nextBtn" type="button"><span class="lbl">Siguiente&nbsp;</span>→</button>
+  </div>
 </div>
 
 <script>
 (function(){
   "use strict";
 
-  /* ---------- navegación: desplazamiento suave a cada sección ---------- */
-  document.querySelectorAll(".navpill").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      var target = document.getElementById(btn.getAttribute("data-go"));
-      if (target) target.scrollIntoView({behavior:"smooth", block:"start"});
-    });
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var total = slides.length;
+  var current = 0;
+
+  var lockIndex = slides.findIndex(function(s){ return s.classList.contains("lockslide"); });
+  var maxReachable = lockIndex; // se amplía a total-1 una vez desbloqueado
+
+  var dotsEl = document.getElementById("dots");
+  var counterEl = document.getElementById("counter");
+  var topKickerEl = document.getElementById("topkicker");
+  var progressFillEl = document.getElementById("progressfill");
+  var prevBtn = document.getElementById("prevBtn");
+  var nextBtn = document.getElementById("nextBtn");
+
+  var dots = [];
+  slides.forEach(function(_, i){
+    var d = document.createElement("button");
+    d.type = "button";
+    d.className = "dot";
+    d.setAttribute("role", "tab");
+    d.setAttribute("aria-label", "Ir a la diapositiva " + (i + 1));
+    d.addEventListener("click", function(){ goTo(i); });
+    dotsEl.appendChild(d);
+    dots.push(d);
   });
+
+  function labelFor(i){
+    var kEl = slides[i].querySelector(".kicker, .bignum, .eyebrow, .agenda-kicker");
+    return kEl ? kEl.textContent.trim() : "";
+  }
+
+  function render(){
+    slides.forEach(function(s, i){ s.hidden = (i !== current); });
+    dots.forEach(function(d, i){
+      d.classList.toggle("active", i === current);
+      d.classList.toggle("locked", i > maxReachable);
+    });
+    counterEl.textContent = (current + 1) + " / " + total;
+    topKickerEl.textContent = labelFor(current);
+    progressFillEl.style.width = (((current + 1) / total) * 100) + "%";
+    prevBtn.disabled = (current === 0);
+    nextBtn.disabled = (current === total - 1 && current >= maxReachable);
+  }
+
+  function goTo(i){
+    if (i < 0 || i >= total) return;
+    if (i > maxReachable){
+      // destino bloqueado: llevar al candado y avisar
+      current = lockIndex;
+      render();
+      var pass = document.getElementById("retos-pass");
+      if (pass) pass.focus();
+      return;
+    }
+    current = i;
+    render();
+  }
+
+  function next(){
+    if (current >= total - 1) return;
+    if (current === lockIndex && maxReachable <= lockIndex){
+      var pass = document.getElementById("retos-pass");
+      var fb = document.getElementById("retos-lock-feedback");
+      if (fb){ fb.className = "lock-feedback bad"; fb.textContent = "Ingresa la contraseña para continuar."; }
+      if (pass) pass.focus();
+      return;
+    }
+    goTo(current + 1);
+  }
+  function prev(){ goTo(current - 1); }
+
+  prevBtn.addEventListener("click", prev);
+  nextBtn.addEventListener("click", next);
+
+  document.addEventListener("keydown", function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    if (e.key === "ArrowRight"){ next(); }
+    else if (e.key === "ArrowLeft"){ prev(); }
+  });
+
+  /* deslizar (táctil) */
+  var touchStartX = null;
+  var deckEl = document.getElementById("deck");
+  deckEl.addEventListener("touchstart", function(e){
+    if (e.touches && e.touches.length === 1) touchStartX = e.touches[0].clientX;
+  }, {passive:true});
+  deckEl.addEventListener("touchend", function(e){
+    if (touchStartX === null) return;
+    var endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : touchStartX;
+    var dx = endX - touchStartX;
+    touchStartX = null;
+    if (Math.abs(dx) < 50) return;
+    if (dx < 0) next(); else prev();
+  }, {passive:true});
 
   /* ---------- cifrado / descifrado César ---------- */
   var CIPHER_A = "CLYPMPJH HUALZ KL JVUMPHY";
@@ -821,9 +913,7 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
   var HASH_A = "807b5ea8473229fca5b73f7e40d96c2cda47f705c929f5da30dc4f85cec046d2";
   var HASH_B = "af95e4c355534514de647a6dd84d67ef601bcfb63ded7f41f7408d9ecdae1aab";
 
-  function normalize(s){
-    return (s || "").toUpperCase().replace(/[^A-Z]/g, "");
-  }
+  function normalize(s){ return (s || "").toUpperCase().replace(/[^A-Z]/g, ""); }
 
   function toHex(buffer){
     var bytes = new Uint8Array(buffer);
@@ -878,44 +968,6 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
     vAnswer.addEventListener("keydown", function(e){ if (e.key === "Enter") vCheck.click(); });
   }
 
-  /* ---------- candado de los retos ---------- */
-  var RETOS_PASS = "123";
-  var lockCard = document.getElementById("retos-lock");
-  var retosContent = document.getElementById("retos-content");
-  var retosPass = document.getElementById("retos-pass");
-  var retosUnlock = document.getElementById("retos-unlock");
-  var retosLockFeedback = document.getElementById("retos-lock-feedback");
-
-  function unlockRetos(persist){
-    if (lockCard) lockCard.hidden = true;
-    if (retosContent) retosContent.hidden = false;
-    if (persist){
-      try { localStorage.setItem("retos-unlocked", "1"); } catch (e) {}
-    }
-  }
-
-  (function initLock(){
-    var yaDesbloqueado = false;
-    try { yaDesbloqueado = localStorage.getItem("retos-unlocked") === "1"; } catch (e) {}
-    if (yaDesbloqueado) unlockRetos(false);
-  })();
-
-  function tryUnlock(){
-    var val = (retosPass.value || "").trim();
-    if (val === RETOS_PASS){
-      unlockRetos(true);
-    } else {
-      retosLockFeedback.className = "lock-feedback bad";
-      retosLockFeedback.textContent = "Contraseña incorrecta. Pregúntale a tu profesor.";
-      retosPass.value = "";
-      retosPass.focus();
-    }
-  }
-  if (retosUnlock){
-    retosUnlock.addEventListener("click", tryUnlock);
-    retosPass.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
-  }
-
   /* ---------- copiar comando de la práctica ---------- */
   var copyBtn = document.getElementById("copy-cmd");
   var cmdText = document.getElementById("cmd-text");
@@ -935,5 +987,38 @@ footer code{font-family:var(--mono);background:var(--paper-2);padding:1px 6px;bo
     });
   }
 
+  /* ---------- candado de los retos ---------- */
+  var RETOS_PASS = "123";
+  var retosPass = document.getElementById("retos-pass");
+  var retosUnlockBtn = document.getElementById("retos-unlock");
+  var retosLockFeedback = document.getElementById("retos-lock-feedback");
+
+  (function initLock(){
+    var yaDesbloqueado = false;
+    try { yaDesbloqueado = localStorage.getItem("retos-unlocked") === "1"; } catch (e) {}
+    if (yaDesbloqueado) maxReachable = total - 1;
+  })();
+
+  function tryUnlock(){
+    var val = (retosPass.value || "").trim();
+    if (val === RETOS_PASS){
+      maxReachable = total - 1;
+      try { localStorage.setItem("retos-unlocked", "1"); } catch (e) {}
+      retosLockFeedback.className = "lock-feedback ok";
+      retosLockFeedback.textContent = "¡Desbloqueado!";
+      goTo(lockIndex + 1);
+    } else {
+      retosLockFeedback.className = "lock-feedback bad";
+      retosLockFeedback.textContent = "Contraseña incorrecta. Pregúntale a tu profesor.";
+      retosPass.value = "";
+      retosPass.focus();
+    }
+  }
+  if (retosUnlockBtn){
+    retosUnlockBtn.addEventListener("click", tryUnlock);
+    retosPass.addEventListener("keydown", function(e){ if (e.key === "Enter") tryUnlock(); });
+  }
+
+  render();
 })();
 </script>
