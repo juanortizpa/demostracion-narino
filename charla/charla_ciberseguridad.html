@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cómo piensa un atacante</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +74,9 @@
 }
 
 *{box-sizing:border-box;}
-html,body{height:100%;}
+[hidden]{display:none !important;}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+html,body{height:100%;margin:0;}
 body{
   background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.5;
   -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; overflow:hidden;
@@ -103,13 +110,13 @@ a{color:var(--amber-ink);}
 /* ---------- escenario de diapositivas ---------- */
 .deck{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;}
 .slide{
-  position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
-  overflow-y:auto;
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
 }
-.slide-inner{width:100%;max-width:900px;margin:0 auto;padding-block:26px;}
+.slide-inner{width:100%;max-width:900px;margin:auto;padding-block:26px;}
 
 /* ---------- divisores de parte ---------- */
-.slide.divider{justify-content:center;align-items:center;text-align:center;}
+.slide.divider{text-align:center;}
 .divider .slide-inner{max-width:620px;padding-block:0;}
 .divider .bignum{
   font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
@@ -264,7 +271,7 @@ input[type="text"]:focus,input[type="range"]:focus{outline:2px solid var(--amber
 .feedback.wait{background:var(--paper-2);color:var(--ink-faint);}
 
 /* ---------- candado ---------- */
-.slide.lockslide{justify-content:center;align-items:center;text-align:center;}
+.slide.lockslide{text-align:center;}
 .lockslide .slide-inner{max-width:420px;padding-block:0;}
 .lockcard svg{width:42px;height:42px;margin:0 auto 12px;display:block;}
 .lockcard h2{font-size:1.3rem;}
@@ -329,7 +336,8 @@ input[type="password"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
   .navbtn span.lbl{display:none;}
 }
 </style>
-
+</head>
+<body>
 <div class="topbar gutter">
   <div class="topbar-in">
     <span class="brand-mini"><span class="sq"></span>Expediente de Amenazas</span>
@@ -1022,3 +1030,5 @@ input[type="password"]:focus{outline:2px solid var(--amber);outline-offset:1px;}
   render();
 })();
 </script>
+</body>
+</html>
